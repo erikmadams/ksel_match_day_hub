@@ -320,7 +320,7 @@
         // Save countdown state to localStorage
         function saveCountdownState() {
             const stateToSave = {
-                enable: countdownState.enabled,
+                enabled: countdownState.enabled,
                 targetDate: countdownState.targetDate
             };
             localStorage.setItem('kselCountdownState', JSON.stringify(stateToSave));
@@ -333,7 +333,7 @@
                 if (savedState) {
                     const parsed = JSON.parse(savedState);
                     countdownState.enabled = parsed.enabled || false;
-                    countdownState.tagetDate = parsed.targetDate || null;
+                    countdownState.targetDate = parsed.targetDate || null;
                 }
             } catch (e) {
                 console.log('Error loading countdown state:', e);
@@ -982,7 +982,7 @@
                     document.getElementById('countdownTime').value = timeString;
 
                     // Update target date display
-                    const formattedTarget = targetDate.toLocalString('en-us', {
+                    const formattedTarget = targetDate.toLocaleString('en-us', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
@@ -1004,7 +1004,7 @@
                 // Update target date display for player view too
                 if (!isAdminView) {
                     const targetDate = new Date(countdownState.targetDate);
-                    const formattedTarget = targetDate.toLocalString('en-US', {
+                    const formattedTarget = targetDate.toLocaleString('en-US', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
