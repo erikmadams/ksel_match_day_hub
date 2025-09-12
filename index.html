@@ -862,7 +862,8 @@
                     bus.teams = shuffledTeams.slice(teamIndex, teamIndex + teamCount);
                     teamIndex += teamCount;
                 });
-                
+
+                saveBusSchedules();
                 renderAll();
             }
         }
