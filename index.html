@@ -317,6 +317,31 @@
             intervalId: null
         };
 
+        // Save countdown state to localStorage
+        function saveCountdownState() {
+            const stateToSave = {
+                enable: countdownState.enabled,
+                targetDate: countdownState.targetDate
+            };
+            localStorage.setItem('kselCountdownState', JSON.stringify(stateToSave));
+        }
+
+        // Load countdown state from localStorage
+        function loadCountdownState() {
+            try { 
+                const savedState = localStorage.getItem('kselCountdownState');
+                if (savedState) {
+                    const parsed = JSON.parse(savedState);
+                    countdownState.enabled = parsed.enabled || false;
+                    countdownState.tagetDate = parsed.targetDate || null;
+                }
+            } catch (e) {
+                console.log('Error loading countdown state:', e);
+                // Reset to defaults if corrupted
+                countdownState.enabled = false;
+                countdownState.targetDate = null;
+            }
+        }    
         // Separate bus schedules with launch tracking
         let busScheduleA = [
             {
@@ -373,8 +398,13 @@
             }
             
             updateCountdownUI();
-        }
+            }
 
+            // Save to localStorage
+            saveCountdownState();
+            updateCountdownUI();
+        }
+        
         function startCountdown() {
             if (countdownState.intervalId) {
                 clearInterval(countdownState.intervalId);
@@ -465,6 +495,9 @@
             
             document.getElementById('countdownTargetDate').textContent = formattedTarget;
             document.getElementById('currentTargetDate').textContent = formattedTarget;
+
+            // Save to localStorage
+            saveCountdownState();
             
             // If countdown is enabled, restart it with new target
             if (countdownState.enabled) {
@@ -920,6 +953,9 @@
         }
 
         function setupView() {
+            // Load countdown state for localStorage first
+            loadCountdownState();
+            
             if (isAdminView) {
                 // Show admin sections and controls
                 document.querySelectorAll('.admin-section').forEach(element => {
@@ -933,15 +969,56 @@
                 document.title = 'KSEL Match Day Hub - Admin';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule • Team Assignments • Live Updates';
                 
-                // Initialize countdown form with next Thursday
-                setNextThursday();
-            } else {
+                // Initialize countdown form with next Thursday (if no saved state)
+                if (!countdownState.targetDate) {
+                    setNextThursday();
+                } else {
+                    // Load saved target date into form
+                    const targetDate = new Date(countdownState.targetDate);
+                    const dateString = targetDate.toISOString().split('T')[0];
+                    const timeString = targetDate.toTimeString().substring(0, 5);
+
+                    document.getElementById('countdownDate').value = dateString;
+                    document.getElementById('countdownTime').value = timeString;
+
+                    // Update target date display
+                    const formattedTarget = targetDate.toLocalString('en-us', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    document.getElementById('countdownTargetDate').textContent = formattedTarget;
+                    document.getElementById('currentTargetDate').textContent = formattedTarget;
+                }
+            } else {    
                 // Player view is default
                 document.title = 'KSEL Match Day - Player View';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
             }
+            // Check if countdown should be visible (for both admin and player views)
+            if (countdownState.enabled && countdownState.targetDate) {
+                // Update target date display for player view too
+                if (!isAdminView) {
+                    const targetDate = new Date(countdownState.targetDate);
+                    const formattedTarget = targetDate.toLocalString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    document.getElementById('countdownTargetDate').textContent = formattedTarget;
+                }
+                startCountdown();
+            }    
         }
-
+        
         // Close modals when clicking outside
         window.onclick = function(event) {
             const teamModal = document.getElementById('teamModal');
