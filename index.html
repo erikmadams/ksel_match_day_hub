@@ -45,6 +45,99 @@
             </div>
         </div>
 
+        <!-- Countdown Timer Display (Always visible when enabled) -->
+        <div id="countdownDisplay" class="bg-white rounded-xl shadow-lg mb-6 p-6 border-l-4" style="display: none; border-color: #8C15E0;">
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <i data-lucide="timer" class="w-6 h-6" style="color: #8C15E0;"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Next Tournament</h2>
+                </div>
+                <div id="countdownTimer" class="text-4xl font-mono font-bold mb-2" style="color: #8C15E0;">
+                    --d --h --m --s
+                </div>
+                <div id="countdownTargetDate" class="text-gray-600 text-lg">
+                    Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Timer Admin Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 admin-section" style="display: none;">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800 text-left flex items-center gap-2">
+                    <i data-lucide="timer" class="w-5 h-5 text-red-600"></i>
+                    Countdown Timer Control
+                </h2>
+                <div class="flex gap-2">
+                    <button 
+                        id="toggleCountdownBtn"
+                        onclick="toggleCountdown()"
+                        class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg inline-flex items-center justify-center gap-2 font-medium transition-colors text-sm"
+                    >
+                        <i data-lucide="power" class="w-4 h-4"></i>
+                        <span id="toggleCountdownText">Enable Countdown</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Timer Settings -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Timer Settings</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Target Date</label>
+                            <input 
+                                type="date" 
+                                id="countdownDate"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Target Time</label>
+                            <input 
+                                type="time" 
+                                id="countdownTime"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            >
+                        </div>
+                        <button 
+                            onclick="setNextThursday()"
+                            class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            Set to Next Thursday 7:00 PM
+                        </button>
+                        <button 
+                            onclick="updateCountdownTarget()"
+                            class="w-full text-white px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
+                            style="background-color: #EE2A3E"
+                        >
+                            Update Countdown Target
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Current Status -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Current Status</h3>
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Timer Status:</span>
+                            <span id="timerStatus" class="text-sm font-bold text-gray-800">Disabled</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Target Date:</span>
+                            <span id="currentTargetDate" class="text-sm font-bold text-gray-800">Not Set</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm font-medium text-gray-600">Time Remaining:</span>
+                            <span id="adminTimeRemaining" class="text-sm font-bold text-gray-800">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Current Time Display -->
         <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
             <div class="text-center">
@@ -217,6 +310,13 @@
     </div>
 
     <script>
+        // Countdown Timer State (in memory only)
+        let countdownState = {
+            enabled: false,
+            targetDate: null,
+            intervalId: null
+        };
+
         // Separate bus schedules with launch tracking
         let busScheduleA = [
             {
@@ -255,6 +355,168 @@
         const urlParams = new URLSearchParams(window.location.search);
         const isAdminView = urlParams.get('view') === 'admin';
 
+        // Countdown Timer Functions
+        function toggleCountdown() {
+            if (!isAdminView) return;
+            
+            countdownState.enabled = !countdownState.enabled;
+            
+            if (countdownState.enabled) {
+                if (!countdownState.targetDate) {
+                    alert('Please set a target date and time first');
+                    countdownState.enabled = false;
+                    return;
+                }
+                startCountdown();
+            } else {
+                stopCountdown();
+            }
+            
+            updateCountdownUI();
+        }
+
+        function startCountdown() {
+            if (countdownState.intervalId) {
+                clearInterval(countdownState.intervalId);
+            }
+            
+            countdownState.intervalId = setInterval(updateCountdownDisplay, 1000);
+            updateCountdownDisplay();
+            
+            // Show countdown display
+            document.getElementById('countdownDisplay').style.display = 'block';
+        }
+
+        function stopCountdown() {
+            if (countdownState.intervalId) {
+                clearInterval(countdownState.intervalId);
+                countdownState.intervalId = null;
+            }
+            
+            // Hide countdown display
+            document.getElementById('countdownDisplay').style.display = 'none';
+        }
+
+        function updateCountdownDisplay() {
+            if (!countdownState.enabled || !countdownState.targetDate) {
+                return;
+            }
+
+            const now = new Date();
+            const target = new Date(countdownState.targetDate);
+            const timeDiff = target.getTime() - now.getTime();
+
+            if (timeDiff <= 0) {
+                // Countdown expired
+                document.getElementById('countdownTimer').textContent = 'TOURNAMENT TIME!';
+                document.getElementById('countdownTimer').className = 'text-4xl font-mono font-bold text-red-600 mb-2 animate-pulse';
+                return;
+            }
+
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            const formattedTime = `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            
+            const timerElement = document.getElementById('countdownTimer');
+            timerElement.textContent = formattedTime;
+            timerElement.className = 'text-4xl font-mono font-bold mb-2';
+            timerElement.style.color = '#8C15E0';
+            
+            // Update admin display
+            if (isAdminView) {
+                document.getElementById('adminTimeRemaining').textContent = formattedTime;
+            }
+        }
+
+        function updateCountdownTarget() {
+            if (!isAdminView) return;
+            
+            const dateInput = document.getElementById('countdownDate').value;
+            const timeInput = document.getElementById('countdownTime').value;
+            
+            if (!dateInput || !timeInput) {
+                alert('Please set both date and time');
+                return;
+            }
+            
+            const targetDateTime = new Date(`${dateInput}T${timeInput}`);
+            const now = new Date();
+            
+            if (targetDateTime <= now) {
+                alert('Target date and time must be in the future');
+                return;
+            }
+            
+            countdownState.targetDate = targetDateTime.toISOString();
+            
+            // Update displays
+            const formattedTarget = targetDateTime.toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            document.getElementById('countdownTargetDate').textContent = formattedTarget;
+            document.getElementById('currentTargetDate').textContent = formattedTarget;
+            
+            // If countdown is enabled, restart it with new target
+            if (countdownState.enabled) {
+                startCountdown();
+            }
+            
+            alert('Countdown target updated successfully!');
+        }
+
+        function setNextThursday() {
+            if (!isAdminView) return;
+            
+            const now = new Date();
+            const daysUntilThursday = (4 - now.getDay() + 7) % 7;
+            const nextThursday = new Date(now);
+            
+            if (daysUntilThursday === 0 && now.getHours() >= 19) {
+                // If it's Thursday after 7 PM, set for next Thursday
+                nextThursday.setDate(now.getDate() + 7);
+            } else {
+                nextThursday.setDate(now.getDate() + (daysUntilThursday || 7));
+            }
+            
+            // Set to 7:00 PM
+            nextThursday.setHours(19, 0, 0, 0);
+            
+            // Update form inputs
+            const dateString = nextThursday.toISOString().split('T')[0];
+            const timeString = '19:00';
+            
+            document.getElementById('countdownDate').value = dateString;
+            document.getElementById('countdownTime').value = timeString;
+        }
+
+        function updateCountdownUI() {
+            if (!isAdminView) return;
+            
+            const toggleBtn = document.getElementById('toggleCountdownText');
+            const statusText = document.getElementById('timerStatus');
+            
+            if (countdownState.enabled) {
+                toggleBtn.textContent = 'Disable Countdown';
+                statusText.textContent = 'Active';
+                statusText.className = 'text-sm font-bold text-green-600';
+            } else {
+                toggleBtn.textContent = 'Enable Countdown';
+                statusText.textContent = 'Disabled';
+                statusText.className = 'text-sm font-bold text-gray-800';
+            }
+        }
+
+        // Original functions (keeping existing functionality)
         function getAllBuses() {
             return [...busScheduleA, ...busScheduleB];
         }
@@ -411,7 +673,7 @@
         }
 
         function toggleBusLaunch(busId, column) {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
             const bus = scheduleData.find(b => b.id === busId);
@@ -490,7 +752,7 @@
         }
 
         function addBusLaunch(column) {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             const time = prompt(`Enter launch time for Schedule ${column} (HH:MM in 24-hour format):`);
             const busName = prompt('Enter bus name:');
@@ -522,7 +784,7 @@
         }
 
         function removeBus(busId, column) {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
             const bus = scheduleData.find(b => b.id === busId);
@@ -540,7 +802,7 @@
         }
 
         function clearSchedule(column) {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             if (confirm(`Are you sure you want to clear Schedule ${column}?`)) {
                 if (column === 'A') {
@@ -553,7 +815,7 @@
         }
 
         function randomizeTeams() {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             const allBuses = getAllBuses();
             if (allBuses.length === 0) {
@@ -577,13 +839,19 @@
         }
 
         function openTeamModal() {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             updateTeamModal();
-            document.getElementById('teamModal').classList.remove('hidden');
+            const modal = document.getElementById('teamModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
         }
 
         function closeTeamModal() {
-            document.getElementById('teamModal').classList.add('hidden');
+            const modal = document.getElementById('teamModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
         }
 
         function updateTeamModal() {
@@ -614,7 +882,7 @@
         }
 
         function saveTeams() {
-            if (!isAdminView) return; // Prevent execution in player view
+            if (!isAdminView) return;
             
             const busId = parseInt(document.getElementById('busSelect').value);
             const teamNames = document.getElementById('teamNames').value
@@ -647,6 +915,7 @@
             if (isAdminView) {
                 renderTeamSummary();
                 renderTournamentStatus();
+                updateCountdownUI();
             }
         }
 
@@ -663,8 +932,11 @@
                 
                 document.title = 'KSEL Match Day Hub - Admin';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule • Team Assignments • Live Updates';
+                
+                // Initialize countdown form with next Thursday
+                setNextThursday();
             } else {
-                // Player view is default - admin elements are already hidden via inline styles
+                // Player view is default
                 document.title = 'KSEL Match Day - Player View';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
             }
@@ -690,6 +962,9 @@
             // Start time updates
             updateCurrentTime();
             setInterval(updateCurrentTime, 1000);
+            
+            // Update countdown display every second
+            setInterval(updateCountdownDisplay, 1000);
             
             // Render all content
             renderAll();
