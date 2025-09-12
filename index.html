@@ -780,8 +780,8 @@
         function addBusLaunch(column) {
             if (!isAdminView) return;
             
-            const time = prompt(`Enter launch time for Schedule ${column} (HH:MM in 24-hour format):`);
             const busName = prompt('Enter bus name:');
+            const time = prompt(`Enter launch time for Schedule ${column} (HH:MM in 24-hour format):`);
             const matchPassword = prompt('Enter match password for this bus (optional):') || '';
             
             if (time && busName && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time)) {
