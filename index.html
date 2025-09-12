@@ -343,6 +343,30 @@
             }
         }
 
+        //Save bus schedules to localStorage
+        function saveBusSchedules() {
+            const scheduleDate = {
+                busScheduleA: busScheduleA,
+                busScheduleB: busScheduleB,
+            };
+            localStorage.setItem('kselBusSchedules', JSON.stringfly(scheduleData));
+        }
+
+        //Load bus schedules from localStorage
+        function loadBusSchedules() {
+            try {
+                const savedSchedules = localStorage.getItem('kselBusSchedules');
+                if (savedSchedules) {
+                    const parsed = JSON.parse(savedSchedules);
+                    busScheduleA = parsed.busScheduleA || [];
+                    busScheduleB = parsed.busScheduleB || [];
+                }
+            } catch (e) {
+                console.log('Error loading bus schedules:' e);
+                busScheduleA = [];
+                busScheduleB = [];
+            }
+        }    
         // Bus schedules - EMPTY for clean start
         let busScheduleA = [];
         let busScheduleB = [];
