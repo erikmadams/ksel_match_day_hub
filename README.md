@@ -2,7 +2,7 @@
 
 A comprehensive tournament management platform for the Kern Schools/Scholastic Esports League (KSEL) Fortnite tournaments. This hub provides real-time battle bus scheduling, team management, and live match coordination across 28 local schools.
 
-**Students and Coaches:** Access the form at: [[https://erikmadams.github.io/ksel-fortnite-results](https://erikmadams.github.io/ksel-match-day-hub/)]
+**Students and Coaches:** Access the form at: [[https://erikmadams.github.io/ksel-fortnite-results](https://erikmadams.github.io/ksel_match_day_hub/)]
 
 ## Features
 
