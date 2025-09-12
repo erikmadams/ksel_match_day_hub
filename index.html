@@ -686,6 +686,7 @@
                 } else {
                     bus.launchTime = null;
                 }
+                saveBusSchedules();
                 renderAll();
             }
         }
@@ -777,7 +778,8 @@
                     busScheduleB.push(newBus);
                     busScheduleB.sort((a, b) => a.time.localeCompare(b.time));
                 }
-                
+
+                saveBusSchedules();
                 renderAll();
             } else if (time && busName) {
                 alert('Please enter time in HH:MM format (24-hour)');
@@ -798,6 +800,7 @@
                     const index = busScheduleB.findIndex(b => b.id === busId);
                     if (index > -1) busScheduleB.splice(index, 1);
                 }
+                saveBusSchedules();
                 renderAll();
             }
         }
@@ -811,6 +814,7 @@
                 } else {
                     busScheduleB = [];
                 }
+                saveBusSchedules();
                 renderAll();
             }
         }
@@ -906,6 +910,7 @@
             if (bus) {
                 bus.teams = teamNames;
                 bus.matchPassword = matchPassword;
+                saveBusSchedules();
                 renderAll();
                 closeTeamModal();
             }
@@ -921,8 +926,9 @@
         }
 
         function setupView() {
-            // Load countdown state from localStorage first
+            // Load both countdown state and bus schedules from localStorage first
             loadCountdownState();
+            loadBusSchedules();
             
             if (isAdminView) {
                 // Show admin sections and controls
