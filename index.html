@@ -345,11 +345,11 @@
 
         //Save bus schedules to localStorage
         function saveBusSchedules() {
-            const scheduleDate = {
+            const scheduleData = {
                 busScheduleA: busScheduleA,
                 busScheduleB: busScheduleB,
             };
-            localStorage.setItem('kselBusSchedules', JSON.stringfly(scheduleData));
+            localStorage.setItem('kselBusSchedules', JSON.stringify(scheduleData));
         }
 
         //Load bus schedules from localStorage
@@ -362,7 +362,7 @@
                     busScheduleB = parsed.busScheduleB || [];
                 }
             } catch (e) {
-                console.log('Error loading bus schedules:' e);
+                console.log('Error loading bus schedules:', e);
                 busScheduleA = [];
                 busScheduleB = [];
             }
