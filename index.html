@@ -310,7 +310,7 @@
     </div>
 
     <script>
-        // Countdown Timer State (in memory only)
+        // Countdown Timer State
         let countdownState = {
             enabled: false,
             targetDate: null,
@@ -342,39 +342,10 @@
                 countdownState.targetDate = null;
             }
         }
-        // Separate bus schedules with launch tracking
-        let busScheduleA = [
-            {
-                id: 1,
-                time: '19:00',
-                busNumber: 'Bus Alpha',
-                matchPassword: 'ALPHA001',
-                isLaunched: false,
-                launchTime: null,
-                teams: ['Lightning Bolts', 'Storm Riders', 'Thunder Hawks', 'Blaze Squad']
-            },
-            {
-                id: 2,
-                time: '19:15',
-                busNumber: 'Bus Beta',
-                matchPassword: 'BETA002',
-                isLaunched: false,
-                launchTime: null,
-                teams: ['Phoenix Rising', 'Dragon Force', 'Viper Strike', 'Falcon Elite']
-            }
-        ];
 
-        let busScheduleB = [
-            {
-                id: 3,
-                time: '19:30',
-                busNumber: 'Bus Gamma',
-                matchPassword: 'GAMMA003',
-                isLaunched: false,
-                launchTime: null,
-                teams: ['Wolf Pack', 'Eagle Eye', 'Shark Attack', 'Lion Pride']
-            }
-        ];
+        // Bus schedules - EMPTY for clean start
+        let busScheduleA = [];
+        let busScheduleB = [];
 
         // Check URL parameter - default is player view
         const urlParams = new URLSearchParams(window.location.search);
@@ -979,7 +950,7 @@
                     document.getElementById('countdownTime').value = timeString;
 
                     // Update target date display
-                    const formattedTarget = targetDate.toLocaleString('en-us', {
+                    const formattedTarget = targetDate.toLocaleString('en-US', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
@@ -996,6 +967,7 @@
                 document.title = 'KSEL Match Day - Player View';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
             }
+            
             // Check if countdown should be visible (for both admin and player views)
             if (countdownState.enabled && countdownState.targetDate) {
                 // Update target date display for player view too
