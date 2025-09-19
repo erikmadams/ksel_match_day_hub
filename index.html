@@ -309,7 +309,111 @@
         </div>
     </div>
 
+    <!-- Individual Bus Team Assignment Modal -->
+    <div id="busTeamModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800" id="busTeamModalTitle">Assign Teams to Bus</h3>
+                    <button onclick="closeBusTeamModal()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Match Password Section -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Match Password</label>
+                    <input 
+                        type="text" 
+                        id="individualBusPassword" 
+                        placeholder="Enter match password for this bus" 
+                        maxlength="50"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                </div>
+
+                <!-- Method Selection Tabs -->
+                <div class="mb-4">
+                    <div class="flex border-b border-gray-200">
+                        <button 
+                            id="manualTabBtn"
+                            onclick="switchTeamInputMethod('manual')"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600"
+                        >
+                            Manual Entry
+                        </button>
+                        <button 
+                            id="csvTabBtn"
+                            onclick="switchTeamInputMethod('csv')"
+                            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                        >
+                            CSV Upload
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Manual Entry Section -->
+                <div id="manualEntry" class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Team Names (one per line)</label>
+                    <textarea 
+                        id="individualTeamNames" 
+                        rows="10" 
+                        placeholder="Enter team names, one per line..."
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    ></textarea>
+                    <div class="text-sm text-gray-500 mt-1">
+                        Current count: <span id="teamCount">0</span> teams
+                    </div>
+                </div>
+
+                <!-- CSV Upload Section -->
+                <div id="csvEntry" class="mb-4" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload CSV File</label>
+                    <input 
+                        type="file" 
+                        id="csvFileInput" 
+                        accept=".csv"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        onchange="handleCSVUpload(event)"
+                    >
+                    <div class="mt-2 text-sm text-gray-500">
+                        <p>Upload a CSV file with team names. The file should have:</p>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>Team names in the first column</li>
+                            <li>Header row will be ignored</li>
+                            <li>One team name per row</li>
+                        </ul>
+                    </div>
+                    <div id="csvPreview" class="mt-3 p-3 bg-gray-50 rounded-lg" style="display: none;">
+                        <h4 class="font-medium text-gray-700 mb-2">Preview:</h4>
+                        <div id="csvPreviewContent" class="text-sm text-gray-600"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2">
+                    <button 
+                        onclick="closeBusTeamModal()"
+                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onclick="saveIndividualBusTeams()"
+                        class="text-white px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
+                        style="background-color: #EE2A3E"
+                    >
+                        Save Teams
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Global variables for current bus being edited
+        let currentBusId = null;
+        let currentBusColumn = null;
+        
         // Countdown Timer State
         let countdownState = {
             enabled: false,
@@ -374,6 +478,152 @@
         // Check URL parameter - default is player view
         const urlParams = new URLSearchParams(window.location.search);
         const isAdminView = urlParams.get('view') === 'admin';
+
+        // Individual Bus Team Assignment Functions
+        function openBusTeamModal(busId, column) {
+            if (!isAdminView) return;
+            
+            currentBusId = busId;
+            currentBusColumn = column;
+            
+            const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
+            const bus = scheduleData.find(b => b.id === busId);
+            
+            if (bus) {
+                document.getElementById('busTeamModalTitle').textContent = `Assign Teams to ${bus.busNumber}`;
+                document.getElementById('individualBusPassword').value = bus.matchPassword || '';
+                document.getElementById('individualTeamNames').value = bus.teams.join('\n');
+                updateTeamCount();
+                
+                // Reset to manual entry tab
+                switchTeamInputMethod('manual');
+                
+                document.getElementById('busTeamModal').classList.remove('hidden');
+            }
+        }
+
+        function closeBusTeamModal() {
+            document.getElementById('busTeamModal').classList.add('hidden');
+            currentBusId = null;
+            currentBusColumn = null;
+        }
+
+        function switchTeamInputMethod(method) {
+            const manualTab = document.getElementById('manualTabBtn');
+            const csvTab = document.getElementById('csvTabBtn');
+            const manualEntry = document.getElementById('manualEntry');
+            const csvEntry = document.getElementById('csvEntry');
+            
+            if (method === 'manual') {
+                manualTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600';
+                csvTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+                manualEntry.style.display = 'block';
+                csvEntry.style.display = 'none';
+            } else {
+                manualTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+                csvTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600';
+                manualEntry.style.display = 'none';
+                csvEntry.style.display = 'block';
+            }
+        }
+
+        function updateTeamCount() {
+            const textarea = document.getElementById('individualTeamNames');
+            const teams = textarea.value
+                .split('\n')
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+            
+            document.getElementById('teamCount').textContent = teams.length;
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvContent = e.target.result;
+                const lines = csvContent.split('\n');
+                
+                // Parse CSV - assume first column contains team names, skip header row
+                const teams = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        // Simple CSV parsing - split by comma and take first column
+                        const columns = line.split(',');
+                        const teamName = columns[0].trim().replace(/"/g, ''); // Remove quotes
+                        if (teamName) {
+                            teams.push(teamName);
+                        }
+                    }
+                }
+                
+                if (teams.length > 0) {
+                    // Update the manual textarea with parsed teams
+                    document.getElementById('individualTeamNames').value = teams.join('\n');
+                    updateTeamCount();
+                    
+                    // Show preview
+                    const previewDiv = document.getElementById('csvPreview');
+                    const previewContent = document.getElementById('csvPreviewContent');
+                    previewContent.innerHTML = `
+                        <p><strong>${teams.length} teams found:</strong></p>
+                        <div class="mt-2 max-h-32 overflow-y-auto">
+                            ${teams.slice(0, 10).map(team => `<div class="py-1">${team}</div>`).join('')}
+                            ${teams.length > 10 ? '<div class="py-1 text-gray-500">... and ' + (teams.length - 10) + ' more</div>' : ''}
+                        </div>
+                    `;
+                    previewDiv.style.display = 'block';
+                    
+                    // Switch back to manual tab to show the results
+                    switchTeamInputMethod('manual');
+                } else {
+                    alert('No team names found in the CSV file');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function saveIndividualBusTeams() {
+            if (!isAdminView || !currentBusId || !currentBusColumn) return;
+            
+            const scheduleData = currentBusColumn === 'A' ? busScheduleA : busScheduleB;
+            const bus = scheduleData.find(b => b.id === currentBusId);
+            
+            if (bus) {
+                const teamNames = document.getElementById('individualTeamNames').value
+                    .split('\n')
+                    .map(name => name.trim())
+                    .filter(name => name.length > 0);
+                
+                const matchPassword = document.getElementById('individualBusPassword').value.trim();
+                
+                bus.teams = teamNames;
+                bus.matchPassword = matchPassword;
+                
+                saveBusSchedules();
+                renderAll();
+                closeBusTeamModal();
+                
+                alert(`Successfully assigned ${teamNames.length} teams to ${bus.busNumber}`);
+            }
+        }
+
+        // Update the team count as user types
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('individualTeamNames');
+            if (textarea) {
+                textarea.addEventListener('input', updateTeamCount);
+            }
+        });
 
         // Countdown Timer Functions
         function toggleCountdown() {
@@ -642,25 +892,32 @@
                     </div>
                 ` : '';
                 
-                // Show or hide remove button based on view
-                const removeButtonHtml = isAdminView ? `
-                    <button 
-                        onclick="removeBus(${bus.id}, '${column}')" 
-                        class="text-red-500 hover:text-red-700 p-1"
-                        title="Remove this bus"
-                    >
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                ` : '';
-                
-                const teamCountHtml = isAdminView ? 
-                    `<div class="flex items-center justify-between mb-2">
+                // Show or hide admin buttons based on view
+                const adminButtonsHtml = isAdminView ? `
+                    <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-medium opacity-75">${bus.teams.length} teams assigned</span>
-                        ${removeButtonHtml}
-                    </div>` :
-                    `<div class="text-center mb-2">
+                        <div class="flex gap-1">
+                            <button 
+                                onclick="openBusTeamModal(${bus.id}, '${column}')" 
+                                class="text-blue-500 hover:text-blue-700 p-1"
+                                title="Assign teams to this bus"
+                            >
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                            </button>
+                            <button 
+                                onclick="removeBus(${bus.id}, '${column}')" 
+                                class="text-red-500 hover:text-red-700 p-1"
+                                title="Remove this bus"
+                            >
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="text-center mb-2">
                         <span class="text-xs font-medium opacity-75">${bus.teams.length} teams assigned</span>
-                    </div>`;
+                    </div>
+                `;
                 
                 busElement.innerHTML = `
                     <div class="mb-4">
@@ -680,7 +937,7 @@
                         </div>
                     </div>
                     ${launchCheckboxHtml}
-                    ${teamCountHtml}
+                    ${adminButtonsHtml}
                     <div class="space-y-1">
                         ${bus.teams.map(team => `
                             <div class="bg-white bg-opacity-50 rounded px-2 py-1 text-sm font-medium">
@@ -1022,9 +1279,13 @@
         // Close modals when clicking outside
         window.onclick = function(event) {
             const teamModal = document.getElementById('teamModal');
+            const busTeamModal = document.getElementById('busTeamModal');
             
             if (event.target === teamModal) {
                 closeTeamModal();
+            }
+            if (event.target === busTeamModal) {
+                closeBusTeamModal();
             }
         }
 
