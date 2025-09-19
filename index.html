@@ -465,8 +465,14 @@
                 const savedSchedules = localStorage.getItem('kselBusSchedules');
                 if (savedSchedules) {
                     const parsed = JSON.parse(savedSchedules);
-                    busScheduleA = parsed.busScheduleA || [];
-                    busScheduleB = parsed.busScheduleB || [];
+                    // Ensure we're getting arrays, not objects
+                    busScheduleA = Array.isArray(parsed.busScheduleA) ? parsed.busScheduleA : [];
+                    busScheduleB = Array.isArray(parsed.busScheduleB) ? parsed.busScheduleB : [];
+                    console.log('Loaded bus schedules - A:', busScheduleA.length, 'B:', busScheduleB.length);
+                } else {
+                    busScheduleA = [];
+                    busScheduleB = [];
+                    console.log('No saved bus schedules found');
                 }
             } catch (e) {
                 console.log('Error loading bus schedules:', e);
