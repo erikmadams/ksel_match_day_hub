@@ -450,32 +450,69 @@
             }
         }
 
-        //Save bus schedules to localStorage
+        // Enhanced data persistence with fallback methods
         function saveBusSchedules() {
             const scheduleData = {
                 busScheduleA: busScheduleA,
                 busScheduleB: busScheduleB,
+                timestamp: Date.now()
             };
-            localStorage.setItem('kselBusSchedules', JSON.stringify(scheduleData));
+            
+            try {
+                // Primary storage
+                localStorage.setItem('kselBusSchedules', JSON.stringify(scheduleData));
+                
+                // Fallback storage with different key patterns
+                localStorage.setItem('ksel_buses', JSON.stringify(scheduleData));
+                localStorage.setItem('tournament_data', JSON.stringify(scheduleData));
+                
+                // Store in sessionStorage as backup
+                sessionStorage.setItem('kselBusSchedules', JSON.stringify(scheduleData));
+                
+                console.log('Data saved to multiple storage locations');
+            } catch (e) {
+                console.error('Failed to save bus schedules:', e);
+            }
         }
 
-        //Load bus schedules from localStorage
         function loadBusSchedules() {
+            const storageKeys = ['kselBusSchedules', 'ksel_buses', 'tournament_data'];
+            let loadedData = null;
+            
             try {
-                const savedSchedules = localStorage.getItem('kselBusSchedules');
-                if (savedSchedules) {
-                    const parsed = JSON.parse(savedSchedules);
-                    // Ensure we're getting arrays, not objects
-                    busScheduleA = Array.isArray(parsed.busScheduleA) ? parsed.busScheduleA : [];
-                    busScheduleB = Array.isArray(parsed.busScheduleB) ? parsed.busScheduleB : [];
-                    console.log('Loaded bus schedules - A:', busScheduleA.length, 'B:', busScheduleB.length);
+                // Try localStorage first with multiple keys
+                for (const key of storageKeys) {
+                    const savedSchedules = localStorage.getItem(key);
+                    if (savedSchedules) {
+                        console.log(`Found data with key: ${key}`);
+                        loadedData = JSON.parse(savedSchedules);
+                        break;
+                    }
+                }
+                
+                // Try sessionStorage if localStorage failed
+                if (!loadedData) {
+                    const sessionData = sessionStorage.getItem('kselBusSchedules');
+                    if (sessionData) {
+                        console.log('Found data in sessionStorage');
+                        loadedData = JSON.parse(sessionData);
+                    }
+                }
+                
+                if (loadedData) {
+                    busScheduleA = Array.isArray(loadedData.busScheduleA) ? loadedData.busScheduleA : [];
+                    busScheduleB = Array.isArray(loadedData.busScheduleB) ? loadedData.busScheduleB : [];
+                    console.log(`Loaded bus schedules - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
+                    
+                    // Re-save to all locations to ensure consistency
+                    saveBusSchedules();
                 } else {
+                    console.log('No saved bus schedules found in any storage location');
                     busScheduleA = [];
                     busScheduleB = [];
-                    console.log('No saved bus schedules found');
                 }
             } catch (e) {
-                console.log('Error loading bus schedules:', e);
+                console.error('Error loading bus schedules:', e);
                 busScheduleA = [];
                 busScheduleB = [];
             }
