@@ -484,9 +484,9 @@
         let busScheduleA = [];
         let busScheduleB = [];
 
-        // Check URL parameter - default is player view
-        const urlParams = new URLSearchParams(window.location.search);
-        const isAdminView = urlParams.get('view') === 'admin';
+        // Check URL hash - default is player view
+        const urlHash = window.location.hash;
+        const isAdminView = urlHash === '#admin';
 
         // Individual Bus Team Assignment Functions
         function openBusTeamModal(busId, column) {
