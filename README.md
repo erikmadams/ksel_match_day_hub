@@ -8,34 +8,29 @@ The KSEL Match Day Hub is a comprehensive web-based tournament management system
 ## Features
 
 ### Dual Access System
-- **Player/Coach View**: Live tournament schedule and countdown timer
-- **Admin View**: Full tournament management controls and team assignment tools
+- **Player/Coach View**: Live bus schedule and countdown timer
+- **Admin View**: Full bus management controls and team assignment tools
 
 ### Real-Time Tournament Management
-- Live bus scheduling across two battle bus schedules (A & B)
+- Live bus scheduling across two battle bus schedules
+- Schedule 'A' 3:30ish release time / Schedule 'B' 4:00ish release time
 - Dynamic team assignment with CSV upload support
 - Real-time status updates visible to all participants
-- Countdown timer for tournament start
+- Countdown timer to let everyone know when the launches start for the week
 
 ### Visual Status System
 Buses display different colors based on their current state:
-- **Light Gray (Pending)**: Bus created but missing match key or teams
+- **Light Gray (Pending)**: Bus created but missing match key and teams
 - **Yellow/Gold (Ready)**: Bus has both match key and teams assigned  
 - **Light Green (Active)**: Bus has been launched in Fortnite
-- **Light Red (Completed)**: 5 minutes have passed since launch
+- **Light Red (Completed)**: 5 minutes have passed since launch and match is in progress
 
-## Access URLs
+## Page Views
 
 ### Player/Coach View
-```
-https://erikmadams.github.io/ksel_match_day_hub/
-```
 Shows live tournament schedule, countdown timer, and bus status updates.
 
 ### Admin View
-```
-https://erikmadams.github.io/ksel_match_day_hub/#admin
-```
 Full tournament management interface with all administrative controls.
 
 ## Admin Functions
@@ -43,7 +38,7 @@ Full tournament management interface with all administrative controls.
 ### Bus Management
 - **Add Bus**: Create new battle buses with custom names and launch times
 - **Schedule Assignment**: Automatically sorts buses by time within Schedule A (3:30 release) or B (4:00 release)
-- **Individual Bus Controls**: Each bus has dedicated team assignment and removal options
+- **Individual Bus Controls**: Each bus has dedicated team assignment, match key assignment, and removal options
 
 ### Team Assignment
 Two methods for assigning teams to buses:
@@ -77,16 +72,16 @@ Two methods for assigning teams to buses:
 - Real-time countdown display
 - Visible to all participants when enabled
 
-## Tournament Workflow
+## Match Day Workflow
 
-### Pre-Tournament Setup
-1. Access admin view using admin URL
-2. Create buses for both schedules with names and times
-3. Assign teams to each bus (manual entry or CSV upload)
-4. Set countdown timer for tournament start
+### Pre-Match Day Setup
+1. Set countdown timer for tournament start
+2. Access admin view using admin URL
+3. Create buses for both schedules with names and times
+4. Assign teams to each bus (manual entry or CSV upload)
 5. Set match keys when ready to release lobby codes
 
-### During Tournament
+### During Matches
 1. Monitor bus status in admin view
 2. Launch buses by checking "Launch Bus" when deployed in Fortnite
 3. Status automatically updates for all participants
@@ -149,11 +144,12 @@ README.md - This documentation
 - Lucide icon integration
 
 ## Support
-For technical support or feature requests, contact the KSEL tournament operations team.
+For technical support or feature requests, contact the KSEL leadership team.
 
 ## Version History
+- v3.0: Real-time Google Sheets integration with live data sync, enhanced visual bus status system, dedicated match key management, CSV team upload, and 5-second polling updates
 - v2.0: Google Sheets integration, enhanced team assignment, visual status system
 - v1.0: Initial release with basic bus scheduling and countdown timer
 
 ## License
-Developed for Kern Schools/Scholastic Esports League internal use.
+Developed for Kern Scholastic Esports League by LeagueHQ developers.  For KSEL internal use only.
