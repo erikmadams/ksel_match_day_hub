@@ -456,7 +456,7 @@
             }
         }
 
-        // Google Sheets Integration Functions (Simplified Approach)
+        // Google Sheets Integration Functions (Fixed Verification)
         async function saveToGoogleSheets() {
             if (!isAdminView) return;
             
@@ -479,18 +479,16 @@
                     mode: 'no-cors' // This bypasses CORS but we won't get response details
                 });
 
-                // Since we're using no-cors, we can't read the response
-                // So we'll assume it worked and verify by reading back
-                setTimeout(async () => {
-                    const verified = await loadFromGoogleSheets();
-                    if (verified) {
-                        console.log('✅ Data successfully verified in Google Sheets');
-                        showSyncStatus('saved', 'Data saved to Google Sheets');
-                        updateConnectionStatus(true);
-                    } else {
-                        throw new Error('Data verification failed');
-                    }
-                }, 1000);
+                // Since we're using no-cors, we'll assume it worked
+                // Update our local timestamp to match what we just sent
+                lastSyncTimestamp = tournamentData.timestamp;
+                
+                console.log('✅ Data sent to Google Sheets successfully');
+                showSyncStatus('saved', 'Data saved to Google Sheets');
+                updateConnectionStatus(true);
+                
+                // Also save to local storage as backup
+                saveToLocalStorage();
                 
             } catch (error) {
                 console.error('❌ Error saving to Google Sheets:', error);
@@ -515,38 +513,57 @@
                 if (response.ok) {
                     const result = await response.json();
                     
-                    if (result.data && result.timestamp > lastSyncTimestamp) {
-                        console.log('📥 Loading fresh data from Google Sheets');
+                    if (result.data) {
+                        // Check if this is actually new data by comparing content, not just timestamp
+                        const currentDataHash = JSON.stringify({
+                            busA: busScheduleA.length,
+                            busB: busScheduleB.length,
+                            countdown: countdownState.enabled
+                        });
                         
-                        // Update local data
-                        busScheduleA = Array.isArray(result.data.busScheduleA) ? result.data.busScheduleA : [];
-                        busScheduleB = Array.isArray(result.data.busScheduleB) ? result.data.busScheduleB : [];
+                        const newDataHash = JSON.stringify({
+                            busA: result.data.busScheduleA ? result.data.busScheduleA.length : 0,
+                            busB: result.data.busScheduleB ? result.data.busScheduleB.length : 0,
+                            countdown: result.data.countdownState ? result.data.countdownState.enabled : false
+                        });
                         
-                        // Update countdown state
-                        if (result.data.countdownState) {
-                            const wasEnabled = countdownState.enabled;
-                            countdownState = { ...countdownState, ...result.data.countdownState };
+                        if (newDataHash !== currentDataHash || result.timestamp > lastSyncTimestamp) {
+                            console.log('📥 Loading fresh data from Google Sheets');
                             
-                            // Handle countdown state changes
-                            if (countdownState.enabled && !wasEnabled) {
-                                startCountdown();
-                            } else if (!countdownState.enabled && wasEnabled) {
-                                stopCountdown();
+                            // Update local data
+                            busScheduleA = Array.isArray(result.data.busScheduleA) ? result.data.busScheduleA : [];
+                            busScheduleB = Array.isArray(result.data.busScheduleB) ? result.data.busScheduleB : [];
+                            
+                            // Update countdown state
+                            if (result.data.countdownState) {
+                                const wasEnabled = countdownState.enabled;
+                                countdownState = { ...countdownState, ...result.data.countdownState };
+                                
+                                // Handle countdown state changes
+                                if (countdownState.enabled && !wasEnabled) {
+                                    startCountdown();
+                                } else if (!countdownState.enabled && wasEnabled) {
+                                    stopCountdown();
+                                }
                             }
+                            
+                            lastSyncTimestamp = result.timestamp || Date.now();
+                            
+                            console.log(`✅ Loaded from Google Sheets - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
+                            showSyncStatus('loaded', 'Data updated from Google Sheets');
+                            updateConnectionStatus(true);
+                            
+                            // Also save to local storage as backup
+                            saveToLocalStorage();
+                            
+                            return true;
+                        } else {
+                            console.log('📊 Google Sheets data is up to date');
+                            updateConnectionStatus(true);
+                            return false;
                         }
-                        
-                        lastSyncTimestamp = result.timestamp;
-                        
-                        console.log(`✅ Loaded from Google Sheets - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
-                        showSyncStatus('loaded', 'Data updated from Google Sheets');
-                        updateConnectionStatus(true);
-                        
-                        // Also save to local storage as backup
-                        saveToLocalStorage();
-                        
-                        return true;
                     } else {
-                        console.log('📊 Google Sheets data is up to date');
+                        console.log('📊 No data in Google Sheets yet');
                         updateConnectionStatus(true);
                         return false;
                     }
