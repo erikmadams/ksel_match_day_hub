@@ -368,6 +368,13 @@
     </div>
 
     <script>
+        // Google Sheets Configuration
+        const GOOGLE_SHEETS_CONFIG = {
+            // Replace with your actual Google Apps Script deployment URL
+            SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwdmK-Cc8mZvIUbpiIjO2vTu-dzAAt9cVNajrWfuyq_TT-hgXn6oRIyRoq03WcFUptJ/exec',
+            CORS_PROXY: 'https://api.allorigins.win/raw?url='
+        };
+
         // Global Variables
         let busScheduleA = [];
         let busScheduleB = [];
@@ -375,6 +382,8 @@
         let currentBusColumn = null;
         let currentMatchKeyBusId = null;
         let currentMatchKeyColumn = null;
+        let lastSyncTimestamp = 0;
+        let pollInterval = null;
 
         // Countdown Timer State
         let countdownState = {
@@ -452,34 +461,249 @@
             }
         }
 
-        // Storage Functions
+        // Google Sheets Integration Functions
+        async function saveToGoogleSheets() {
+            if (!isAdminView) return;
+            
+            const tournamentData = {
+                busScheduleA: busScheduleA,
+                busScheduleB: busScheduleB,
+                countdownState: countdownState,
+                timestamp: Date.now()
+            };
+
+            try {
+                console.log('Saving tournament data to Google Sheets...');
+                
+                const response = await fetch(GOOGLE_SHEETS_CONFIG.CORS_PROXY + encodeURIComponent(GOOGLE_SHEETS_CONFIG.SCRIPT_URL), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify(tournamentData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('✅ Data saved to Google Sheets successfully');
+                        lastSyncTimestamp = tournamentData.timestamp;
+                        
+                        // Update status indicator
+                        showSyncStatus('saved', 'Data saved to Google Sheets');
+                    } else {
+                        throw new Error(result.error || 'Unknown error');
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Error saving to Google Sheets:', error);
+                showSyncStatus('error', 'Failed to save to Google Sheets. Using local storage as backup.');
+                
+                // Fall back to local storage
+                saveToLocalStorage();
+            }
+        }
+
+        async function loadFromGoogleSheets() {
+            try {
+                console.log('Loading tournament data from Google Sheets...');
+                
+                const response = await fetch(GOOGLE_SHEETS_CONFIG.CORS_PROXY + encodeURIComponent(GOOGLE_SHEETS_CONFIG.SCRIPT_URL + '?action=read'));
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.data && result.timestamp > lastSyncTimestamp) {
+                        console.log('📥 Loading fresh data from Google Sheets');
+                        
+                        // Update local data
+                        busScheduleA = Array.isArray(result.data.busScheduleA) ? result.data.busScheduleA : [];
+                        busScheduleB = Array.isArray(result.data.busScheduleB) ? result.data.busScheduleB : [];
+                        
+                        // Update countdown state
+                        if (result.data.countdownState) {
+                            const wasEnabled = countdownState.enabled;
+                            countdownState = { ...countdownState, ...result.data.countdownState };
+                            
+                            // Handle countdown state changes
+                            if (countdownState.enabled && !wasEnabled) {
+                                startCountdown();
+                            } else if (!countdownState.enabled && wasEnabled) {
+                                stopCountdown();
+                            }
+                        }
+                        
+                        lastSyncTimestamp = result.timestamp;
+                        
+                        console.log(`✅ Loaded from Google Sheets - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
+                        showSyncStatus('loaded', 'Data updated from Google Sheets');
+                        
+                        // Also save to local storage as backup
+                        saveToLocalStorage();
+                        
+                        return true;
+                    } else {
+                        console.log('📊 Google Sheets data is up to date');
+                        return false;
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('❌ Error loading from Google Sheets:', error);
+                showSyncStatus('error', 'Could not connect to Google Sheets. Using local storage.');
+                return false;
+            }
+        }
+
+        function startPolling() {
+            if (isAdminView) return; // Only poll in player view
+            
+            console.log('🔄 Starting real-time polling for updates...');
+            
+            pollInterval = setInterval(async () => {
+                const updated = await loadFromGoogleSheets();
+                if (updated) {
+                    renderAll();
+                }
+            }, 5000); // Poll every 5 seconds
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                console.log('⏹️ Stopped polling for updates');
+            }
+        }
+
+        function showSyncStatus(type, message) {
+            // Remove existing status indicators
+            const existingStatus = document.getElementById('syncStatus');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Create status indicator
+            const statusDiv = document.createElement('div');
+            statusDiv.id = 'syncStatus';
+            statusDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 1000;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            `;
+            
+            switch (type) {
+                case 'saved':
+                    statusDiv.style.backgroundColor = '#10b981';
+                    statusDiv.style.color = 'white';
+                    statusDiv.innerHTML = '✅ ' + message;
+                    break;
+                case 'loaded':
+                    statusDiv.style.backgroundColor = '#3b82f6';
+                    statusDiv.style.color = 'white';
+                    statusDiv.innerHTML = '📥 ' + message;
+                    break;
+                case 'error':
+                    statusDiv.style.backgroundColor = '#ef4444';
+                    statusDiv.style.color = 'white';
+                    statusDiv.innerHTML = '❌ ' + message;
+                    break;
+            }
+            
+            document.body.appendChild(statusDiv);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (statusDiv) {
+                    statusDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // Storage Functions (Enhanced)
         function saveBusSchedules() {
+            if (isAdminView) {
+                // In admin view, save to Google Sheets
+                saveToGoogleSheets();
+            } else {
+                // In player view, just save locally (shouldn't happen often)
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
             const scheduleData = {
                 busScheduleA: busScheduleA,
                 busScheduleB: busScheduleB,
+                countdownState: countdownState,
                 timestamp: Date.now()
             };
             try {
                 localStorage.setItem('kselBusSchedules', JSON.stringify(scheduleData));
+                console.log('💾 Data saved to local storage as backup');
             } catch (e) {
-                console.error('Failed to save bus schedules:', e);
+                console.error('Failed to save to local storage:', e);
             }
         }
 
         function loadBusSchedules() {
+            if (isAdminView) {
+                // Admin view: Load from Google Sheets first, then local storage as fallback
+                loadFromGoogleSheets().then(loaded => {
+                    if (!loaded) {
+                        loadFromLocalStorage();
+                    }
+                    renderAll();
+                }).catch(error => {
+                    console.error('Error in loadBusSchedules:', error);
+                    loadFromLocalStorage();
+                    renderAll();
+                });
+            } else {
+                // Player view: Load from Google Sheets first, then start polling
+                loadFromGoogleSheets().then(loaded => {
+                    if (!loaded) {
+                        loadFromLocalStorage();
+                    }
+                    renderAll();
+                    startPolling();
+                }).catch(error => {
+                    console.error('Error in loadBusSchedules:', error);
+                    loadFromLocalStorage();
+                    renderAll();
+                    startPolling();
+                });
+            }
+        }
+
+        function loadFromLocalStorage() {
             try {
                 const savedSchedules = localStorage.getItem('kselBusSchedules');
                 if (savedSchedules) {
                     const parsed = JSON.parse(savedSchedules);
                     busScheduleA = Array.isArray(parsed.busScheduleA) ? parsed.busScheduleA : [];
                     busScheduleB = Array.isArray(parsed.busScheduleB) ? parsed.busScheduleB : [];
-                    console.log(`Loaded bus schedules - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
+                    
+                    if (parsed.countdownState) {
+                        countdownState = { ...countdownState, ...parsed.countdownState };
+                    }
+                    
+                    console.log(`💾 Loaded from local storage - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
                 } else {
                     busScheduleA = [];
                     busScheduleB = [];
                 }
             } catch (e) {
-                console.error('Error loading bus schedules:', e);
+                console.error('Error loading from local storage:', e);
                 busScheduleA = [];
                 busScheduleB = [];
             }
@@ -1128,7 +1352,7 @@
         // Setup and Initialization
         function setupView() {
             loadCountdownState();
-            loadBusSchedules();
+            loadBusSchedules(); // This now handles Google Sheets integration
             
             if (isAdminView) {
                 document.querySelectorAll('.admin-section').forEach(element => {
@@ -1164,9 +1388,16 @@
                     document.getElementById('countdownTargetDate').textContent = formattedTarget;
                     document.getElementById('currentTargetDate').textContent = formattedTarget;
                 }
+
+                // Add connection status indicator for admin
+                addConnectionStatusIndicator();
+                
             } else {    
                 document.title = 'KSEL Match Day - Live View';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
+                
+                // Add "LIVE" indicator for player view
+                addLiveIndicator();
             }
             
             if (countdownState.enabled && countdownState.targetDate) {
@@ -1187,6 +1418,50 @@
             }
         }
 
+        function addConnectionStatusIndicator() {
+            const header = document.querySelector('.flex.items-center.justify-between');
+            if (header) {
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'connectionStatus';
+                statusDiv.className = 'flex items-center gap-2 text-sm';
+                statusDiv.innerHTML = `
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span>Connecting to Google Sheets...</span>
+                `;
+                header.appendChild(statusDiv);
+            }
+        }
+
+        function addLiveIndicator() {
+            const header = document.querySelector('.flex-1.text-center');
+            if (header) {
+                const liveIndicator = document.createElement('div');
+                liveIndicator.className = 'flex items-center justify-center gap-2 mt-2';
+                liveIndicator.innerHTML = `
+                    <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-red-600 font-medium">LIVE</span>
+                `;
+                header.appendChild(liveIndicator);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusDiv = document.getElementById('connectionStatus');
+            if (statusDiv) {
+                if (connected) {
+                    statusDiv.innerHTML = `
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>Google Sheets Connected</span>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>Using Local Storage</span>
+                    `;
+                }
+            }
+        }
+
         function init() {
             lucide.createIcons();
             setupView();
@@ -1195,7 +1470,22 @@
             setInterval(updateCountdownDisplay, 1000);
             renderAll();
             setInterval(renderAll, 30000);
+            
+            // Test Google Sheets connection
+            setTimeout(async () => {
+                try {
+                    await loadFromGoogleSheets();
+                    updateConnectionStatus(true);
+                } catch (error) {
+                    updateConnectionStatus(false);
+                }
+            }, 2000);
         }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
+        });
 
         // Add event listener for team count updates
         document.addEventListener('DOMContentLoaded', function() {
