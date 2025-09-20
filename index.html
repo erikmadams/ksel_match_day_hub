@@ -450,7 +450,77 @@
             }
         }
 
-        // Enhanced data persistence with fallback methods
+        // URL-based data sharing for cross-view persistence
+        function generateDataURL() {
+            if (!isAdminView) return;
+            
+            const tournamentData = {
+                buses: [...busScheduleA, ...busScheduleB],
+                countdown: countdownState,
+                timestamp: Date.now()
+            };
+            
+            try {
+                const compressed = btoa(JSON.stringify(tournamentData));
+                const playerURL = `${window.location.origin}${window.location.pathname}#data=${compressed}`;
+                
+                console.log('Player URL with data:', playerURL);
+                
+                // Create a shareable link
+                const shareDiv = document.createElement('div');
+                shareDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:#EE2A3E;color:white;padding:10px;border-radius:5px;z-index:1000;max-width:300px;';
+                shareDiv.innerHTML = `
+                    <div style="margin-bottom:5px;font-weight:bold;">Share this link for live view:</div>
+                    <input type="text" value="${playerURL}" style="width:100%;margin-bottom:5px;padding:2px;" onclick="this.select()">
+                    <button onclick="this.parentElement.remove()">Close</button>
+                `;
+                document.body.appendChild(shareDiv);
+                
+                return playerURL;
+            } catch (e) {
+                console.error('Error generating data URL:', e);
+            }
+        }
+
+        function loadDataFromURL() {
+            try {
+                const hash = window.location.hash;
+                const dataMatch = hash.match(/#data=([^&]+)/);
+                
+                if (dataMatch) {
+                    console.log('Found data in URL hash');
+                    const compressed = dataMatch[1];
+                    const tournamentData = JSON.parse(atob(compressed));
+                    
+                    // Restore buses
+                    busScheduleA = [];
+                    busScheduleB = [];
+                    
+                    tournamentData.buses.forEach(bus => {
+                        // Determine which schedule based on time or other criteria
+                        if (bus.time <= '15:30') {  // Rough cutoff for Schedule A
+                            busScheduleA.push(bus);
+                        } else {
+                            busScheduleB.push(bus);
+                        }
+                    });
+                    
+                    // Restore countdown
+                    if (tournamentData.countdown) {
+                        countdownState = tournamentData.countdown;
+                        if (countdownState.enabled && countdownState.targetDate) {
+                            startCountdown();
+                        }
+                    }
+                    
+                    console.log(`Loaded from URL - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error loading data from URL:', e);
+            }
+            return false;
+        }
         function saveBusSchedules() {
             const scheduleData = {
                 busScheduleA: busScheduleA,
@@ -1254,9 +1324,12 @@
         }
 
         function setupView() {
-            // Load both countdown state and bus schedules from localStorage first
-            loadCountdownState();
-            loadBusSchedules();
+            // First try to load data from URL, then from localStorage
+            const urlDataLoaded = loadDataFromURL();
+            if (!urlDataLoaded) {
+                loadCountdownState();
+                loadBusSchedules();
+            }
             
             if (isAdminView) {
                 // Show admin sections and controls
@@ -1270,6 +1343,19 @@
                 
                 document.title = 'KSEL Match Day Hub - Admin';
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule • Team Assignments • Live Updates';
+                
+                // Add data sharing button
+                setTimeout(() => {
+                    const header = document.querySelector('.flex.items-center.justify-between');
+                    if (header) {
+                        const shareButton = document.createElement('button');
+                        shareButton.innerHTML = '<i data-lucide="share-2" class="w-4 h-4"></i> Generate Link';
+                        shareButton.className = 'bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg inline-flex items-center justify-center gap-2 font-medium transition-colors text-sm';
+                        shareButton.onclick = generateDataURL;
+                        header.appendChild(shareButton);
+                        lucide.createIcons();
+                    }
+                }, 1000);
                 
                 // Initialize countdown form with next Thursday (if no saved state)
                 if (!countdownState.targetDate) {
