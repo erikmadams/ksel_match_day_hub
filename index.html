@@ -1264,7 +1264,7 @@
             }
         }
 
-        function setupView() {
+        async function setupView() {
             // Load data first
             loadCountdownState();
             
@@ -1282,9 +1282,13 @@
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule • Team Assignments • Live Updates';
                 
                 // Load from Google Sheets for admin (to get latest data)
-                loadBusSchedules().then(() => {
+                try {
+                    await loadBusSchedules();
                     renderAll();
-                });
+                } catch (error) {
+                    console.error('Error loading bus schedules:', error);
+                    renderAll();
+                }
                 
                 // Initialize countdown form
                 if (!countdownState.targetDate) {
@@ -1315,10 +1319,14 @@
                 document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
                 
                 // Load initial data and start polling for updates
-                loadBusSchedules().then(() => {
+                try {
+                    await loadBusSchedules();
                     renderAll();
                     startPolling();
-                });
+                } catch (error) {
+                    console.error('Error loading bus schedules:', error);
+                    renderAll();
+                }
             }
             
             // Handle countdown display
@@ -1354,12 +1362,12 @@
         }
 
         // Initialize the page
-        function init() {
+        async function init() {
             // Initialize Lucide icons
             lucide.createIcons();
             
             // Setup view based on URL parameter
-            setupView();
+            await setupView();
             
             // Start time updates immediately
             updateCurrentTime();
@@ -1367,9 +1375,6 @@
             
             // Update countdown display every second
             setInterval(updateCountdownDisplay, 1000);
-            
-            // Render all content
-            renderAll();
             
             // Set up periodic re-rendering for status updates
             setInterval(renderAll, 30000); // Update status every 30 seconds
