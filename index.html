@@ -1361,7 +1361,7 @@
             // Setup view based on URL parameter
             setupView();
             
-            // Start time updates
+            // Start time updates immediately
             updateCurrentTime();
             setInterval(updateCurrentTime, 1000);
             
@@ -1370,6 +1370,8 @@
             
             // Render all content
             renderAll();
+            
+            // Set up periodic re-rendering for status updates
             setInterval(renderAll, 30000); // Update status every 30 seconds
         }
 
