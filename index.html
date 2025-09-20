@@ -322,18 +322,6 @@
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
-                
-                <!-- Match Key Section -->
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Match Key</label>
-                    <input 
-                        type="text" 
-                        id="individualBusMatchKey" 
-                        placeholder="Enter match key for this bus" 
-                        maxlength="50"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    >
-                </div>
 
                 <!-- Method Selection Tabs -->
                 <div class="mb-4">
@@ -410,10 +398,93 @@
                 </div>
             </div>
         </div>
+    <!-- Match Key Editor Modal -->
+    <div id="matchKeyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800" id="matchKeyModalTitle">Edit Match Key</h3>
+                    <button onclick="closeMatchKeyModal()" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Match Key</label>
+                    <input 
+                        type="text" 
+                        id="matchKeyInput" 
+                        placeholder="Enter match key for this bus" 
+                        maxlength="50"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg font-mono"
+                    >
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button 
+                        onclick="closeMatchKeyModal()"
+                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onclick="saveMatchKey()"
+                        class="text-white px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
+                        style="background-color: #EE2A3E"
+                    >
+                        Save Match Key
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+        // Match Key Management Functions
+        let currentMatchKeyBusId = null;
+        let currentMatchKeyColumn = null;
 
-    <script>
-        // Global variables for current bus being edited
+        function openMatchKeyModal(busId, column) {
+            if (!isAdminView) return;
+            
+            currentMatchKeyBusId = busId;
+            currentMatchKeyColumn = column;
+            
+            const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
+            const bus = scheduleData.find(b => b.id === busId);
+            
+            if (bus) {
+                document.getElementById('matchKeyModalTitle').textContent = `Edit Match Key - ${bus.busNumber}`;
+                document.getElementById('matchKeyInput').value = bus.matchKey || '';
+                document.getElementById('matchKeyModal').classList.remove('hidden');
+                
+                // Focus the input
+                setTimeout(() => {
+                    document.getElementById('matchKeyInput').focus();
+                }, 100);
+            }
+        }
+
+        function closeMatchKeyModal() {
+            document.getElementById('matchKeyModal').classList.add('hidden');
+            currentMatchKeyBusId = null;
+            currentMatchKeyColumn = null;
+        }
+
+        function saveMatchKey() {
+            if (!isAdminView || !currentMatchKeyBusId || !currentMatchKeyColumn) return;
+            
+            const scheduleData = currentMatchKeyColumn === 'A' ? busScheduleA : busScheduleB;
+            const bus = scheduleData.find(b => b.id === currentMatchKeyBusId);
+            
+            if (bus) {
+                const matchKey = document.getElementById('matchKeyInput').value.trim();
+                bus.matchKey = matchKey;
+                
+                saveBusSchedules();
+                renderAll();
+                closeMatchKeyModal();
+                
+                const message = matchKey ? `Match key set to: ${matchKey}` : 'Match key cleared';
+                alert(message);
+            }
+        }
         let currentBusId = null;
         let currentBusColumn = null;
         
@@ -956,6 +1027,13 @@
                         <span class="text-xs font-medium opacity-75">${bus.teams.length} teams assigned</span>
                         <div class="flex gap-1">
                             <button 
+                                onclick="openMatchKeyModal(${bus.id}, '${column}')" 
+                                class="text-purple-500 hover:text-purple-700 p-1"
+                                title="Set match key"
+                            >
+                                <i data-lucide="key" class="w-4 h-4"></i>
+                            </button>
+                            <button 
                                 onclick="openBusTeamModal(${bus.id}, '${column}')" 
                                 class="text-blue-500 hover:text-blue-700 p-1"
                                 title="Assign teams to this bus"
@@ -988,7 +1066,7 @@
                                 <span class="font-bold text-lg">${formatTime12Hour(bus.time)}</span>
                             </div>
                             <div class="text-right">
-                                <div class="text-xs opacity-75 font-mono bg-black bg-opacity-20 px-2 py-1 rounded">
+                                <div class="text-sm font-mono bg-black bg-opacity-20 px-3 py-2 rounded font-bold">
                                     Match Key: ${bus.matchKey || 'Not set'}
                                 </div>
                             </div>
@@ -1352,12 +1430,16 @@
         window.onclick = function(event) {
             const teamModal = document.getElementById('teamModal');
             const busTeamModal = document.getElementById('busTeamModal');
+            const matchKeyModal = document.getElementById('matchKeyModal');
             
             if (event.target === teamModal) {
                 closeTeamModal();
             }
             if (event.target === busTeamModal) {
                 closeBusTeamModal();
+            }
+            if (event.target === matchKeyModal) {
+                closeMatchKeyModal();
             }
         }
 
