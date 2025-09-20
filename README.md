@@ -1,9 +1,9 @@
 # KSEL Match Day Hub - README
 
 ## Overview
-The KSEL Match Day Hub is a comprehensive web-based tournament management system designed for the Kern Schools/Scholastic Esports League weekly Fortnite competitions. It provides real-time coordination tools for tournament administrators and live schedule viewing for coaches and players.
+The KSEL Match Day Hub is a comprehensive web-based tournament management system designed for the Kern Scholastic Esports League weekly Fortnite competitions. It provides real-time coordination tools for tournament administrators and live schedule viewing for coaches and players.
 
-**Students and Coaches:** Access the form at: [[https://erikmadams.github.io/ksel-fortnite-results](https://erikmadams.github.io/ksel_match_day_hub/)]
+**Students and Coaches:** Access the Bus Dashboard at: [[https://erikmadams.github.io/ksel-fortnite-results](https://erikmadams.github.io/ksel_match_day_hub/)]
 
 ## Features
 
