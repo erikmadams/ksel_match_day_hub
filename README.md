@@ -1,141 +1,159 @@
-# KSEL Match Day Hub
+# KSEL Match Day Hub - README
 
-A comprehensive tournament management platform for the Kern Schools/Scholastic Esports League (KSEL) Fortnite tournaments. This hub provides real-time battle bus scheduling, team management, and live match coordination across 28 local schools.
+## Overview
+The KSEL Match Day Hub is a comprehensive web-based tournament management system designed for the Kern Schools/Scholastic Esports League weekly Fortnite competitions. It provides real-time coordination tools for tournament administrators and live schedule viewing for coaches and players.
 
 **Students and Coaches:** Access the form at: [[https://erikmadams.github.io/ksel-fortnite-results](https://erikmadams.github.io/ksel_match_day_hub/)]
 
 ## Features
 
-### Player/Coach Interface (Default View)
-- **Real-time Battle Bus Schedules** - View upcoming matches across two tournament brackets
-- **Live Status Updates** - Color-coded bus status (Yellow: Upcoming, Green: Active, Gray: Completed)  
-- **Match Passwords** - Instantly accessible custom match passwords for each bus
-- **Team Assignments** - See which teams are assigned to each battle bus
-- **Current Time Display** - Always know the current time for match coordination
+### Dual Access System
+- **Player/Coach View**: Live tournament schedule and countdown timer
+- **Admin View**: Full tournament management controls and team assignment tools
 
-### Admin Control Panel (`?view=admin`)
-- **Manual Launch Control** - Check boxes to manually launch buses and trigger status changes
-- **Dual Schedule Management** - Manage Schedule A and Schedule B independently
-- **Team Management** - Assign and reassign teams across different buses
-- **Bus Management** - Add, remove, and clear buses with custom passwords
-- **Real-time Coordination** - Changes instantly reflect in the player view
-- **Tournament Statistics** - Overview of total teams, buses, and status counts
+### Real-Time Tournament Management
+- Live bus scheduling across two battle bus schedules (A & B)
+- Dynamic team assignment with CSV upload support
+- Real-time status updates visible to all participants
+- Countdown timer for tournament start
 
-## Battle Bus System
+### Visual Status System
+Buses display different colors based on their current state:
+- **Light Gray (Pending)**: Bus created but missing match key or teams
+- **Yellow/Gold (Ready)**: Bus has both match key and teams assigned  
+- **Light Green (Active)**: Bus has been launched in Fortnite
+- **Light Red (Completed)**: 5 minutes have passed since launch
 
-### Status Management
-- **Upcoming (Yellow)** - Default state before admin launches the bus
-- **Active (Green)** - When admin manually checks the launch box
-- **Completed (Gray)** - Automatically changes 7 minutes after launch
+## Access URLs
 
-### Schedule Organization
-- **Schedule A & B** - Two independent tournament brackets
-- **High Capacity** - Supports up to 25 teams per bus without scroll issues
-- **Time Format** - 12-hour time display for better readability
-
-## Technical Stack
-
-- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-- **Styling:** Tailwind CSS for responsive design
-- **Icons:** Lucide Icons for professional UI elements
-- **Deployment:** GitHub Pages for reliable hosting
-- **Data Storage:** Client-side JSON for real-time updates
-
-## KSEL Integration
-
-This hub integrates with the broader KSEL tournament ecosystem:
-
-- **Results Entry System** - Link to match results collection
-- **Analytics Dashboard** - Connection to performance leaderboards
-- **School Network** - Serves 28 schools across Kern County
-- **Brand Consistency** - Official KSEL styling and logo integration
-
-## Responsive Design
-
-- **Mobile Optimized** - Works on phones, tablets, and desktops
-- **Touch Friendly** - Easy interaction on all device types
-- **Professional Appearance** - Tournament-grade interface design
-- **Fast Loading** - Optimized for quick access during events
-
-## Setup & Deployment
-
-### Local Development
-```bash
-# Clone the repository
-git clone https://github.com/erikmadams/ksel_match_day_hub.git
-
-# Navigate to directory
-cd ksel_match_day_hub
-
-# Open in browser
-open index.html
+### Player/Coach View
 ```
+https://erikmadams.github.io/ksel_match_day_hub/
+```
+Shows live tournament schedule, countdown timer, and bus status updates.
 
-### GitHub Pages Deployment
-1. Push your changes to the main branch
-2. Enable GitHub Pages in repository settings
-3. Set source to "Deploy from a branch" - main branch
-4. Your site will be available at `https://yourusername.github.io/ksel_match_day_hub/`
+### Admin View
+```
+https://erikmadams.github.io/ksel_match_day_hub/#admin
+```
+Full tournament management interface with all administrative controls.
 
-## Usage Instructions
+## Admin Functions
 
-### For Tournament Administrators
-1. Access the admin panel: `your-url/?view=admin`
-2. Add buses using the "Add Bus" buttons for each schedule
-3. Assign teams through the "Edit" button in Team Management
-4. Launch buses by checking the launch boxes during tournaments
-5. Monitor status through the Tournament Status panel
+### Bus Management
+- **Add Bus**: Create new battle buses with custom names and launch times
+- **Schedule Assignment**: Automatically sorts buses by time within Schedule A (3:30 release) or B (4:00 release)
+- **Individual Bus Controls**: Each bus has dedicated team assignment and removal options
 
-### For Players and Coaches
-1. Visit the main URL (no parameters needed)
-2. Check your assigned bus and match password
-3. Monitor bus status colors for timing
-4. Join matches when your bus shows green (active)
+### Team Assignment
+Two methods for assigning teams to buses:
+
+#### Manual Entry
+- Type team names directly into text area (one per line)
+- Real-time team count display
+- Immediate save to bus assignment
+
+#### CSV Upload
+- Upload CSV files with team names in first column
+- Header row automatically ignored
+- Preview functionality before saving
+- Automatic parsing and validation
+
+### Match Key Management
+- Set unique match keys (Fortnite lobby codes) for each bus
+- Match keys can be added/updated at any time
+- Keys are hidden until set by administrator
+- Real-time display updates to all viewers
+
+### Launch Controls
+- Manual launch checkboxes for each bus
+- Launch timestamp tracking
+- Automatic status progression (Active → Completed)
+- 5-minute completion timer
+
+### Countdown Timer
+- Set target date/time for tournament start
+- "Set to Next Thursday 7:00 PM" quick option
+- Real-time countdown display
+- Visible to all participants when enabled
 
 ## Tournament Workflow
 
-1. **Pre-Tournament Setup** (Admin)
-   - Create battle bus schedules for both brackets
-   - Assign teams to appropriate buses
-   - Set custom match passwords
+### Pre-Tournament Setup
+1. Access admin view using admin URL
+2. Create buses for both schedules with names and times
+3. Assign teams to each bus (manual entry or CSV upload)
+4. Set countdown timer for tournament start
+5. Set match keys when ready to release lobby codes
 
-2. **Live Tournament Management** (Admin)
-   - Launch buses by checking launch boxes
-   - Monitor team assignments and status
-   - Coordinate across multiple matches
+### During Tournament
+1. Monitor bus status in admin view
+2. Launch buses by checking "Launch Bus" when deployed in Fortnite
+3. Status automatically updates for all participants
+4. Buses turn green (active) then red (completed) after 5 minutes
 
-3. **Player Participation** (Teams)
-   - Access schedules through public URL
-   - Use match passwords to join custom games
-   - Follow color-coded status for timing
+### For Participants
+1. Access player view using standard URL
+2. View live schedule and countdown timer
+3. See real-time status updates as buses are prepared and launched
+4. Access match keys and team assignments when available
 
-## KSEL Tournament System
+## Data Management
 
-Part of the comprehensive KSEL esports infrastructure:
-- **Match Results Entry** - Collect player statistics and team performance
-- **Analytics Dashboard** - Season standings and playoff qualification tracking
-- **Match Day Hub** - Real-time tournament coordination (this project)
+### Google Sheets Integration
+The system uses Google Sheets for real-time data synchronization:
+- Admin changes automatically save to Google Sheets
+- Player views poll for updates every 5 seconds
+- Ensures all participants see live tournament data
+- Provides backup and persistence across sessions
 
-## Contributing
+### Local Storage Fallback
+- Automatic fallback to browser storage if Google Sheets unavailable
+- Maintains functionality during connectivity issues
+- Seamless transition between storage methods
 
-This project is part of the Kern Schools/Scholastic Esports League infrastructure. For contributions or issues:
+## Browser Compatibility
+- Chrome (recommended)
+- Safari
+- Firefox
+- Edge
+- Mobile browsers supported
 
-1. Create detailed issue reports
-2. Follow existing code patterns and styling
-3. Test across different devices and browsers
-4. Maintain KSEL brand consistency
+## Setup Requirements
 
-## License
+### Google Sheets Configuration
+1. Create Google Sheet with tournament data structure
+2. Deploy Google Apps Script for API endpoints
+3. Update HTML configuration with script URLs
+4. Test read/write functionality
 
-Developed for the Kern Scholastic Esports League (KSEL) tournament infrastructure.
+### GitHub Pages Deployment
+1. Upload HTML file to GitHub repository
+2. Enable GitHub Pages in repository settings
+3. Access via GitHub Pages URL
+4. Cache control headers prevent stale content
+
+## File Structure
+```
+ksel_match_day_hub.html - Main application file
+README.md - This documentation
+```
+
+## Technical Features
+- Responsive design for desktop and mobile
+- Real-time polling for live updates
+- CORS proxy handling for Google Sheets access
+- LocalStorage backup system
+- Cache control for reliable deployment
+- Tailwind CSS styling
+- Lucide icon integration
 
 ## Support
+For technical support or feature requests, contact the KSEL tournament operations team.
 
-For technical issues or tournament support:
-- Check the GitHub Issues page
-- Contact KSEL tournament administrators
-- Reference the integrated help documentation
+## Version History
+- v2.0: Google Sheets integration, enhanced team assignment, visual status system
+- v1.0: Initial release with basic bus scheduling and countdown timer
 
----
-
-**Built for KSEL** - Empowering competitive esports across Kern County schools
+## License
+Developed for Kern Schools/Scholastic Esports League internal use.
