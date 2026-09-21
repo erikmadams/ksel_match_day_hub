@@ -24,7 +24,7 @@
                 
                 <div class="flex-1 text-center">
                     <h1 class="text-3xl font-bold text-gray-800">Match Day Lobby</h1>
-                    <p class="text-gray-600" id="headerSubtitle">Battle Bus Schedule - Live Updates</p>
+                    <p class="text-gray-600" id="headerSubtitle">Battle Bus Schedule</p>
                 </div>
                 
                 <div class="flex gap-2">
@@ -105,7 +105,7 @@
                             onclick="setNextThursday()"
                             class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                         >
-                            Set to Next Thursday 7:00 PM
+                            Set to Next Thursday at 4:15 PM
                         </button>
                         <button 
                             onclick="updateCountdownTarget()"
@@ -206,28 +206,6 @@
             </div>
         </div>
 
-        <!-- Admin Team Management -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 admin-section" style="display: none;">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i data-lucide="users" class="w-5 h-5 text-red-600"></i>
-                    Team Management
-                </h2>
-                <div class="flex gap-2">
-                    <button 
-                        onclick="randomizeTeams()"
-                        class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg inline-flex items-center justify-center gap-2 font-medium transition-colors text-sm"
-                    >
-                        <i data-lucide="shuffle" class="w-4 h-4"></i>
-                        Randomize
-                    </button>
-                </div>
-            </div>
-            <div id="teamSummary">
-                <!-- Team summary populated by JavaScript -->
-            </div>
-        </div>
-
         <!-- Tournament Status -->
         <div class="bg-white rounded-xl shadow-lg p-6 admin-section" style="display: none;">
             <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -236,89 +214,6 @@
             </h2>
             <div id="tournamentStatus">
                 <!-- Tournament status populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Team Assignment Modal -->
-    <div id="busTeamModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-800" id="busTeamModalTitle">Assign Teams to Bus</h3>
-                    <button onclick="closeBusTeamModal()" class="text-gray-400 hover:text-gray-600">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <!-- Method Selection Tabs -->
-                <div class="mb-4">
-                    <div class="flex border-b border-gray-200">
-                        <button 
-                            id="manualTabBtn"
-                            onclick="switchTeamInputMethod('manual')"
-                            class="px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600"
-                        >
-                            Manual Entry
-                        </button>
-                        <button 
-                            id="csvTabBtn"
-                            onclick="switchTeamInputMethod('csv')"
-                            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
-                        >
-                            CSV Upload
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Manual Entry -->
-                <div id="manualEntry" class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Team Names (one per line)</label>
-                    <textarea 
-                        id="individualTeamNames" 
-                        rows="10" 
-                        placeholder="Enter team names, one per line..."
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    ></textarea>
-                    <div class="text-sm text-gray-500 mt-1">
-                        Current count: <span id="teamCount">0</span> teams
-                    </div>
-                </div>
-
-                <!-- CSV Upload -->
-                <div id="csvEntry" class="mb-4" style="display: none;">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload CSV File</label>
-                    <input 
-                        type="file" 
-                        id="csvFileInput" 
-                        accept=".csv"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        onchange="handleCSVUpload(event)"
-                    >
-                    <div class="mt-2 text-sm text-gray-500">
-                        <p>Upload a CSV file with team names in the first column.</p>
-                    </div>
-                    <div id="csvPreview" class="mt-3 p-3 bg-gray-50 rounded-lg" style="display: none;">
-                        <h4 class="font-medium text-gray-700 mb-2">Preview:</h4>
-                        <div id="csvPreviewContent" class="text-sm text-gray-600"></div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-2">
-                    <button 
-                        onclick="closeBusTeamModal()"
-                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onclick="saveIndividualBusTeams()"
-                        class="text-white px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
-                        style="background-color: #EE2A3E"
-                    >
-                        Save Teams
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -373,8 +268,6 @@
         // Global Variables
         let busScheduleA = [];
         let busScheduleB = [];
-        let currentBusId = null;
-        let currentBusColumn = null;
         let currentMatchKeyBusId = null;
         let currentMatchKeyColumn = null;
         let lastSyncTimestamp = 0;
@@ -422,6 +315,45 @@
             return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
         }
 
+        // Returns YYYY-MM-DD using the browser's LOCAL date (not toISOString,
+        // which is UTC and rolls to the next/previous day for evening times).
+        function getLocalDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Keeps the "Next Match" target-date text (and the admin status panel's
+        // copy of it) in sync with countdownState.targetDate, no matter where
+        // that state last changed (manual update, or a fresh pull from Sheets).
+        function updateTargetDateDisplay() {
+            if (!countdownState.targetDate) {
+                return;
+            }
+
+            const targetDate = new Date(countdownState.targetDate);
+            const formattedTarget = targetDate.toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            const countdownTargetDateEl = document.getElementById('countdownTargetDate');
+            if (countdownTargetDateEl) {
+                countdownTargetDateEl.textContent = formattedTarget;
+            }
+
+            const currentTargetDateEl = document.getElementById('currentTargetDate');
+            if (currentTargetDateEl) {
+                currentTargetDateEl.textContent = formattedTarget;
+            }
+        }
+
         // Bus Status Functions
         function getBusStatus(bus) {
             const now = new Date();
@@ -438,11 +370,10 @@
                 }
             }
             
-            // Check if bus has match key and teams
+            // Check if bus has a match key assigned
             const hasMatchKey = bus.matchKey && bus.matchKey.trim().length > 0;
-            const hasTeams = bus.teams && bus.teams.length > 0;
-            
-            if (hasMatchKey && hasTeams) {
+
+            if (hasMatchKey) {
                 return 'ready';
             } else {
                 return 'pending';
@@ -595,7 +526,8 @@
                             if (result.data.countdownState) {
                                 const wasEnabled = countdownState.enabled;
                                 countdownState = { ...countdownState, ...result.data.countdownState };
-                                
+                                updateTargetDateDisplay();
+
                                 // Handle countdown state changes
                                 if (countdownState.enabled && !wasEnabled) {
                                     startCountdown();
@@ -823,8 +755,7 @@
                     busNumber: busName,
                     matchKey: '',
                     isLaunched: false,
-                    launchTime: null,
-                    teams: []
+                    launchTime: null
                 };
                 
                 if (column === 'A') {
@@ -848,7 +779,7 @@
             const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
             const bus = scheduleData.find(b => b.id === busId);
             
-            if (bus && confirm(`Remove ${bus.busNumber} and all its team assignments?`)) {
+            if (bus && confirm(`Remove ${bus.busNumber}?`)) {
                 if (column === 'A') {
                     const index = busScheduleA.findIndex(b => b.id === busId);
                     if (index > -1) busScheduleA.splice(index, 1);
@@ -936,117 +867,6 @@
             }
         }
 
-        // Team Assignment Functions
-        function openBusTeamModal(busId, column) {
-            if (!isAdminView) return;
-            
-            currentBusId = busId;
-            currentBusColumn = column;
-            
-            const scheduleData = column === 'A' ? busScheduleA : busScheduleB;
-            const bus = scheduleData.find(b => b.id === busId);
-            
-            if (bus) {
-                document.getElementById('busTeamModalTitle').textContent = `Assign Teams to ${bus.busNumber}`;
-                document.getElementById('individualTeamNames').value = bus.teams.join('\n');
-                updateTeamCount();
-                switchTeamInputMethod('manual');
-                document.getElementById('busTeamModal').classList.remove('hidden');
-            }
-        }
-
-        function closeBusTeamModal() {
-            document.getElementById('busTeamModal').classList.add('hidden');
-            currentBusId = null;
-            currentBusColumn = null;
-        }
-
-        function saveIndividualBusTeams() {
-            if (!isAdminView || !currentBusId || !currentBusColumn) return;
-            
-            const scheduleData = currentBusColumn === 'A' ? busScheduleA : busScheduleB;
-            const bus = scheduleData.find(b => b.id === currentBusId);
-            
-            if (bus) {
-                const teamNames = document.getElementById('individualTeamNames').value
-                    .split('\n')
-                    .map(name => name.trim())
-                    .filter(name => name.length > 0);
-                
-                bus.teams = teamNames;
-                saveBusSchedules();
-                renderAll();
-                closeBusTeamModal();
-            }
-        }
-
-        function switchTeamInputMethod(method) {
-            const manualTab = document.getElementById('manualTabBtn');
-            const csvTab = document.getElementById('csvTabBtn');
-            const manualEntry = document.getElementById('manualEntry');
-            const csvEntry = document.getElementById('csvEntry');
-            
-            if (method === 'manual') {
-                manualTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600';
-                csvTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-                manualEntry.style.display = 'block';
-                csvEntry.style.display = 'none';
-            } else {
-                manualTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-                csvTab.className = 'px-4 py-2 text-sm font-medium border-b-2 border-red-500 text-red-600';
-                manualEntry.style.display = 'none';
-                csvEntry.style.display = 'block';
-            }
-        }
-
-        function updateTeamCount() {
-            const textarea = document.getElementById('individualTeamNames');
-            const teams = textarea.value
-                .split('\n')
-                .map(name => name.trim())
-                .filter(name => name.length > 0);
-            
-            document.getElementById('teamCount').textContent = teams.length;
-        }
-
-        function handleCSVUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvContent = e.target.result;
-                const lines = csvContent.split('\n');
-                
-                const teams = [];
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (line) {
-                        const columns = line.split(',');
-                        const teamName = columns[0].trim().replace(/"/g, '');
-                        if (teamName) {
-                            teams.push(teamName);
-                        }
-                    }
-                }
-                
-                if (teams.length > 0) {
-                    document.getElementById('individualTeamNames').value = teams.join('\n');
-                    updateTeamCount();
-                    
-                    const previewDiv = document.getElementById('csvPreview');
-                    const previewContent = document.getElementById('csvPreviewContent');
-                    previewContent.innerHTML = `<p><strong>${teams.length} teams found</strong></p>`;
-                    previewDiv.style.display = 'block';
-                    
-                    switchTeamInputMethod('manual');
-                } else {
-                    alert('No team names found in the CSV file');
-                }
-            };
-            reader.readAsText(file);
-        }
-
         // Countdown Functions
         function toggleCountdown() {
             if (!isAdminView) return;
@@ -1072,7 +892,8 @@
             if (countdownState.intervalId) {
                 clearInterval(countdownState.intervalId);
             }
-            
+
+            updateTargetDateDisplay();
             countdownState.intervalId = setInterval(updateCountdownDisplay, 1000);
             updateCountdownDisplay();
             document.getElementById('countdownDisplay').style.display = 'block';
@@ -1138,19 +959,7 @@
             }
             
             countdownState.targetDate = targetDateTime.toISOString();
-            
-            const formattedTarget = targetDateTime.toLocaleString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-            
-            document.getElementById('countdownTargetDate').textContent = formattedTarget;
-            document.getElementById('currentTargetDate').textContent = formattedTarget;
+            updateTargetDateDisplay();
 
             saveCountdownState();
             
@@ -1163,22 +972,24 @@
 
         function setNextThursday() {
             if (!isAdminView) return;
-            
+
             const now = new Date();
             const daysUntilThursday = (4 - now.getDay() + 7) % 7;
             const nextThursday = new Date(now);
-            
-            if (daysUntilThursday === 0 && now.getHours() >= 19) {
+
+            const isPastTargetTimeToday = now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() >= 15);
+
+            if (daysUntilThursday === 0 && isPastTargetTimeToday) {
                 nextThursday.setDate(now.getDate() + 7);
             } else {
                 nextThursday.setDate(now.getDate() + (daysUntilThursday || 7));
             }
-            
-            nextThursday.setHours(19, 0, 0, 0);
-            
-            const dateString = nextThursday.toISOString().split('T')[0];
-            const timeString = '19:00';
-            
+
+            nextThursday.setHours(16, 15, 0, 0);
+
+            const dateString = getLocalDateString(nextThursday);
+            const timeString = '16:15';
+
             document.getElementById('countdownDate').value = dateString;
             document.getElementById('countdownTime').value = timeString;
         }
@@ -1241,25 +1052,17 @@
                 ` : '';
                 
                 const adminButtonsHtml = isAdminView ? `
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium opacity-75">${bus.teams.length} teams assigned</span>
+                    <div class="flex items-center justify-end mb-2">
                         <div class="flex gap-1">
-                            <button 
-                                onclick="openMatchKeyModal(${bus.id}, '${column}')" 
+                            <button
+                                onclick="openMatchKeyModal(${bus.id}, '${column}')"
                                 class="text-purple-500 hover:text-purple-700 p-1"
                                 title="Set match key"
                             >
                                 <i data-lucide="key" class="w-4 h-4"></i>
                             </button>
-                            <button 
-                                onclick="openBusTeamModal(${bus.id}, '${column}')" 
-                                class="text-blue-500 hover:text-blue-700 p-1"
-                                title="Assign teams"
-                            >
-                                <i data-lucide="users" class="w-4 h-4"></i>
-                            </button>
-                            <button 
-                                onclick="removeBus(${bus.id}, '${column}')" 
+                            <button
+                                onclick="removeBus(${bus.id}, '${column}')"
                                 class="text-red-500 hover:text-red-700 p-1"
                                 title="Remove bus"
                             >
@@ -1267,11 +1070,7 @@
                             </button>
                         </div>
                     </div>
-                ` : `
-                    <div class="text-center mb-2">
-                        <span class="text-xs font-medium opacity-75">${bus.teams.length} teams assigned</span>
-                    </div>
-                `;
+                ` : '';
                 
                 busElement.innerHTML = `
                     <div class="mb-4">
@@ -1284,7 +1083,7 @@
                                 <span class="font-bold text-lg">${formatTime12Hour(bus.time)}</span>
                             </div>
                             <div class="text-right">
-                                <div class="text-sm font-mono bg-black bg-opacity-20 px-3 py-2 rounded font-bold">
+                                <div class="text-[1.75rem] font-mono bg-black bg-opacity-20 px-4 py-2 rounded font-bold">
                                     Match Key: ${bus.matchKey || 'Not set'}
                                 </div>
                             </div>
@@ -1292,13 +1091,6 @@
                     </div>
                     ${launchCheckboxHtml}
                     ${adminButtonsHtml}
-                    <div class="space-y-1">
-                        ${bus.teams.map(team => `
-                            <div class="bg-white bg-opacity-50 rounded px-2 py-1 text-sm font-medium">
-                                ${team}
-                            </div>
-                        `).join('')}
-                    </div>
                 `;
                 
                 scheduleContainer.appendChild(busElement);
@@ -1309,33 +1101,6 @@
 
         function getAllBuses() {
             return [...busScheduleA, ...busScheduleB];
-        }
-
-        function renderTeamSummary() {
-            const summaryContainer = document.getElementById('teamSummary');
-            const allBuses = getAllBuses();
-            const totalTeams = allBuses.reduce((sum, bus) => sum + bus.teams.length, 0);
-            
-            summaryContainer.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
-                        <div class="text-3xl font-bold text-blue-600">${totalTeams}</div>
-                        <div class="text-sm text-blue-600 font-medium">Total Teams</div>
-                    </div>
-                    <div class="bg-green-50 rounded-lg p-4 text-center border border-green-200">
-                        <div class="text-3xl font-bold text-green-600">${allBuses.length}</div>
-                        <div class="text-sm text-green-600 font-medium">Total Buses</div>
-                    </div>
-                    <div class="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
-                        <div class="text-3xl font-bold text-orange-600">${busScheduleA.length}</div>
-                        <div class="text-sm text-orange-600 font-medium">Schedule A Buses</div>
-                    </div>
-                    <div class="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
-                        <div class="text-3xl font-bold text-purple-600">${busScheduleB.length}</div>
-                        <div class="text-sm text-purple-600 font-medium">Schedule B Buses</div>
-                    </div>
-                </div>
-            `;
         }
 
         function renderTournamentStatus() {
@@ -1379,35 +1144,9 @@
             `;
         }
 
-        function randomizeTeams() {
-            if (!isAdminView) return;
-            
-            const allBuses = getAllBuses();
-            if (allBuses.length === 0) {
-                alert('No buses available to randomize teams');
-                return;
-            }
-            
-            if (confirm('This will randomize all team assignments across both schedules. Continue?')) {
-                const allTeams = allBuses.flatMap(bus => bus.teams);
-                const shuffledTeams = [...allTeams].sort(() => Math.random() - 0.5);
-                
-                let teamIndex = 0;
-                allBuses.forEach(bus => {
-                    const teamCount = bus.teams.length;
-                    bus.teams = shuffledTeams.slice(teamIndex, teamIndex + teamCount);
-                    teamIndex += teamCount;
-                });
-
-                saveBusSchedules();
-                renderAll();
-            }
-        }
-
         function renderAll() {
             renderSchedule();
             if (isAdminView) {
-                renderTeamSummary();
                 renderTournamentStatus();
                 updateCountdownUI();
             }
@@ -1415,12 +1154,8 @@
 
         // Modal Event Handlers
         window.onclick = function(event) {
-            const busTeamModal = document.getElementById('busTeamModal');
             const matchKeyModal = document.getElementById('matchKeyModal');
-            
-            if (event.target === busTeamModal) {
-                closeBusTeamModal();
-            }
+
             if (event.target === matchKeyModal) {
                 closeMatchKeyModal();
             }
@@ -1441,29 +1176,19 @@
                 });
                 
                 document.title = 'KSEL Match Day Hub - Admin';
-                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule • Team Assignments • Live Updates';
+                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule';
                 
                 if (!countdownState.targetDate) {
                     setNextThursday();
                 } else {
                     const targetDate = new Date(countdownState.targetDate);
-                    const dateString = targetDate.toISOString().split('T')[0];
+                    const dateString = getLocalDateString(targetDate);
                     const timeString = targetDate.toTimeString().substring(0, 5);
 
                     document.getElementById('countdownDate').value = dateString;
                     document.getElementById('countdownTime').value = timeString;
 
-                    const formattedTarget = targetDate.toLocaleString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    document.getElementById('countdownTargetDate').textContent = formattedTarget;
-                    document.getElementById('currentTargetDate').textContent = formattedTarget;
+                    updateTargetDateDisplay();
                 }
 
                 // Add connection status indicator for admin
@@ -1471,26 +1196,14 @@
                 
             } else {    
                 document.title = 'KSEL Match Day - Live View';
-                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule - Live Updates';
+                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule';
                 
                 // Add "LIVE" indicator for player view
                 addLiveIndicator();
             }
             
             if (countdownState.enabled && countdownState.targetDate) {
-                if (!isAdminView) {
-                    const targetDate = new Date(countdownState.targetDate);
-                    const formattedTarget = targetDate.toLocaleString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    document.getElementById('countdownTargetDate').textContent = formattedTarget;
-                }
+                updateTargetDateDisplay();
                 startCountdown();
             }
         }
@@ -1562,14 +1275,6 @@
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             stopPolling();
-        });
-
-        // Add event listener for team count updates
-        document.addEventListener('DOMContentLoaded', function() {
-            const textarea = document.getElementById('individualTeamNames');
-            if (textarea) {
-                textarea.addEventListener('input', updateTeamCount);
-            }
         });
 
         // Start the application
