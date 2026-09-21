@@ -14,16 +14,15 @@ The KSEL Match Day Hub is a comprehensive web-based tournament management system
 ### Real-Time Tournament Management
 - Live bus scheduling across two battle bus schedules
 - Schedule 'A' 3:30ish release time / Schedule 'B' 4:00ish release time
-- Dynamic team assignment with CSV upload support
 - Real-time status updates visible to all participants
 - Countdown timer to let everyone know when the launches start for the week
 
 ### Visual Status System
 Buses display different colors based on their current state:
-- **Light Gray (Pending)**: Bus created but missing match key and teams
-- **Yellow/Gold (Ready)**: Bus has both match key and teams assigned  
-- **Light Green (Active)**: Bus has been launched in Fortnite
-- **Light Red (Completed)**: 5 minutes have passed since launch and match is in progress
+- **Light Gray (Pending)**: Bus created but missing match key
+- **Gold (Ready)**: Bus has match key assigned  
+- **Green (Active)**: Bus has been launched in Fortnite
+- **Red (Completed)**: 5 minutes have passed since launch and match is in progress
 
 ## Page Views
 
@@ -38,21 +37,7 @@ Full tournament management interface with all administrative controls.
 ### Bus Management
 - **Add Bus**: Create new battle buses with custom names and launch times
 - **Schedule Assignment**: Automatically sorts buses by time within Schedule A (3:30 release) or B (4:00 release)
-- **Individual Bus Controls**: Each bus has dedicated team assignment, match key assignment, and removal options
-
-### Team Assignment
-Two methods for assigning teams to buses:
-
-#### Manual Entry
-- Type team names directly into text area (one per line)
-- Real-time team count display
-- Immediate save to bus assignment
-
-#### CSV Upload
-- Upload CSV files with team names in first column
-- Header row automatically ignored
-- Preview functionality before saving
-- Automatic parsing and validation
+- **Individual Bus Controls**: Each bus has dedicated match key assignment, and removal options
 
 ### Match Key Management
 - Set unique match keys (Fortnite lobby codes) for each bus
@@ -68,7 +53,7 @@ Two methods for assigning teams to buses:
 
 ### Countdown Timer
 - Set target date/time for tournament start
-- "Set to Next Thursday 7:00 PM" quick option
+- "Set to Next Thursday 4:15 PM" quick option
 - Real-time countdown display
 - Visible to all participants when enabled
 
@@ -78,7 +63,6 @@ Two methods for assigning teams to buses:
 1. Set countdown timer for tournament start
 2. Access admin view using admin URL
 3. Create buses for both schedules with names and times
-4. Assign teams to each bus (manual entry or CSV upload)
 5. Set match keys when ready to release lobby codes
 
 ### During Matches
@@ -91,16 +75,7 @@ Two methods for assigning teams to buses:
 1. Access player view using standard URL
 2. View live schedule and countdown timer
 3. See real-time status updates as buses are prepared and launched
-4. Access match keys and team assignments when available
-
-## Data Management
-
-### Google Sheets Integration
-The system uses Google Sheets for real-time data synchronization:
-- Admin changes automatically save to Google Sheets
-- Player views poll for updates every 5 seconds
-- Ensures all participants see live tournament data
-- Provides backup and persistence across sessions
+4. Access match keys when available
 
 ### Local Storage Fallback
 - Automatic fallback to browser storage if Google Sheets unavailable
@@ -115,12 +90,6 @@ The system uses Google Sheets for real-time data synchronization:
 - Mobile browsers supported
 
 ## Setup Requirements
-
-### Google Sheets Configuration
-1. Create Google Sheet with tournament data structure
-2. Deploy Google Apps Script for API endpoints
-3. Update HTML configuration with script URLs
-4. Test read/write functionality
 
 ### GitHub Pages Deployment
 1. Upload HTML file to GitHub repository
@@ -147,6 +116,7 @@ README.md - This documentation
 For technical support or feature requests, contact the KSEL leadership team.
 
 ## Version History
+- v4.0: Removed team assignment from buses and made adjustments to the timer
 - v3.0: Real-time Google Sheets integration with live data sync, enhanced visual bus status system, dedicated match key management, CSV team upload, and 5-second polling updates
 - v2.0: Google Sheets integration, enhanced team assignment, visual status system
 - v1.0: Initial release with basic bus scheduling and countdown timer
