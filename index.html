@@ -450,6 +450,25 @@
             return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
         }
 
+        // Calls lucide.createIcons() defensively. The icon library loads
+        // from an external CDN (see the <script> tags in <head>) — if that
+        // ever fails to load or load in time, a bare lucide.createIcons()
+        // call throws and, because this used to run first inside init(),
+        // it could take the whole page down with it. With this guard, a
+        // missing icon library just means plain unstyled icon slots instead
+        // of a frozen page.
+        function safeCreateIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+                    lucide.createIcons();
+                } else {
+                    console.warn('Lucide icon library is not available — icons will not render, but the page will keep working.');
+                }
+            } catch (e) {
+                console.error('lucide.createIcons() failed:', e);
+            }
+        }
+
         // Returns YYYY-MM-DD using the browser's LOCAL date (not toISOString,
         // which is UTC and rolls to the next/previous day for evening times).
         function getLocalDateString(date) {
@@ -1454,7 +1473,7 @@
                 scheduleContainer.appendChild(busElement);
             });
 
-            lucide.createIcons();
+            safeCreateIcons();
         }
 
         // Drag-and-Drop Reordering
@@ -1492,4 +1511,240 @@
                     if (!isAdminView || draggedBusId === null) return;
                     e.preventDefault();
 
+                    const sourceData = draggedBusColumn === 'A' ? busScheduleA : busScheduleB;
+                    const busIndex = sourceData.findIndex(b => b.id === draggedBusId);
+                    if (busIndex === -1) return;
+
+                    const [movedBus] = sourceData.splice(busIndex, 1);
+
+                    const destData = column === 'A' ? busScheduleA : busScheduleB;
+                    const afterElement = getDragAfterElement(container, e.clientY, draggedBusId);
+
+                    let insertIndex = destData.length;
+                    if (afterElement) {
+                        const afterBusId = Number(afterElement.dataset.busId);
+                        const afterIndex = destData.findIndex(b => b.id === afterBusId);
+                        if (afterIndex !== -1) insertIndex = afterIndex;
+                    }
+
+                    destData.splice(insertIndex, 0, movedBus);
+
+                    saveBusSchedules();
+                    renderAll();
+                });
+            });
+        }
+
+        function getAllBuses() {
+            return [...busScheduleA, ...busScheduleB];
+        }
+
+        function renderTournamentStatus() {
+            const statusContainer = document.getElementById('tournamentStatus');
+            const allBuses = getAllBuses();
             
+            let pendingCount = 0;
+            let readyCount = 0;
+            let activeCount = 0;
+            let completedCount = 0;
+            
+            allBuses.forEach(bus => {
+                const status = getBusStatus(bus);
+                switch(status) {
+                    case 'pending': pendingCount++; break;
+                    case 'ready': readyCount++; break;
+                    case 'active': activeCount++; break;
+                    case 'completed': completedCount++; break;
+                }
+            });
+
+            statusContainer.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
+                        <div class="text-2xl font-bold text-gray-600">${pendingCount}</div>
+                        <div class="text-sm text-gray-600 font-medium">Pending Setup</div>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
+                        <div class="text-2xl font-bold text-yellow-600">${readyCount}</div>
+                        <div class="text-sm text-yellow-600 font-medium">Ready to Launch</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+                        <div class="text-2xl font-bold text-green-600">${activeCount}</div>
+                        <div class="text-sm text-green-600 font-medium">Active Buses</div>
+                    </div>
+                    <div class="bg-red-50 rounded-lg p-4 text-center border border-red-200">
+                        <div class="text-2xl font-bold text-red-600">${completedCount}</div>
+                        <div class="text-sm text-red-600 font-medium">Completed</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAll() {
+            renderSchedule();
+            if (isAdminView) {
+                renderTournamentStatus();
+                updateCountdownUI();
+            }
+        }
+
+        // Modal Event Handlers
+        window.onclick = function(event) {
+            const busTeamModal = document.getElementById('busTeamModal');
+            const matchKeyModal = document.getElementById('matchKeyModal');
+            const editBusModal = document.getElementById('editBusModal');
+
+            if (event.target === busTeamModal) {
+                closeBusTeamModal();
+            }
+            if (event.target === matchKeyModal) {
+                closeMatchKeyModal();
+            }
+            if (event.target === editBusModal) {
+                closeEditBusModal();
+            }
+        }
+
+        // Setup and Initialization
+        function setupView() {
+            loadCountdownState();
+            loadBusSchedules(); // This now handles Google Sheets integration
+            
+            if (isAdminView) {
+                document.querySelectorAll('.admin-section').forEach(element => {
+                    element.style.display = 'block';
+                });
+                
+                document.querySelectorAll('.admin-controls').forEach(element => {
+                    element.style.display = 'flex';
+                });
+                
+                document.title = 'KSEL Match Day Hub - Admin';
+                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule';
+                
+                if (!countdownState.targetDate) {
+                    setNextThursday();
+                } else {
+                    const targetDate = new Date(countdownState.targetDate);
+                    const dateString = getLocalDateString(targetDate);
+                    const timeString = targetDate.toTimeString().substring(0, 5);
+
+                    document.getElementById('countdownDate').value = dateString;
+                    document.getElementById('countdownTime').value = timeString;
+
+                    updateTargetDateDisplay();
+                }
+
+                // Add connection status indicator for admin
+                addConnectionStatusIndicator();
+                
+            } else {    
+                document.title = 'KSEL Match Day - Live View';
+                document.getElementById('headerSubtitle').textContent = 'Battle Bus Schedule';
+                
+                // Add "LIVE" indicator for player view
+                addLiveIndicator();
+            }
+            
+            if (countdownState.enabled && countdownState.targetDate) {
+                updateTargetDateDisplay();
+                startCountdown();
+            }
+        }
+
+        function addConnectionStatusIndicator() {
+            const header = document.querySelector('.flex.items-center.justify-between');
+            if (header) {
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'connectionStatus';
+                statusDiv.className = 'flex items-center gap-2 text-sm';
+                statusDiv.innerHTML = `
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span>Connecting to Google Sheets...</span>
+                `;
+                header.appendChild(statusDiv);
+            }
+        }
+
+        function addLiveIndicator() {
+            const header = document.querySelector('.flex-1.text-center');
+            if (header) {
+                const liveIndicator = document.createElement('div');
+                liveIndicator.className = 'flex items-center justify-center gap-2 mt-2';
+                liveIndicator.innerHTML = `
+                    <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-red-600 font-medium">LIVE</span>
+                `;
+                header.appendChild(liveIndicator);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusDiv = document.getElementById('connectionStatus');
+            if (statusDiv) {
+                if (connected) {
+                    statusDiv.innerHTML = `
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>Google Sheets Connected</span>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>Using Local Storage</span>
+                    `;
+                }
+            }
+        }
+
+        function init() {
+            // The clock starts first, unconditionally, before anything that
+            // could fail (like the external icon library not loading). That
+            // used to be the very last thing to work if lucide.createIcons()
+            // threw, since it ran as the first line of init() and an error
+            // there aborted everything after it, leaving the whole page
+            // stuck with "Current Time: Loading...". Now a problem anywhere
+            // else is logged to the console instead of freezing the page.
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+
+            safeCreateIcons();
+
+            try {
+                setupView();
+                setupDragAndDrop();
+                setInterval(updateCountdownDisplay, 1000);
+                renderAll();
+                setInterval(renderAll, 30000);
+            } catch (e) {
+                console.error('Error during page setup:', e);
+            }
+
+            // Test Google Sheets connection
+            setTimeout(async () => {
+                try {
+                    await loadFromGoogleSheets();
+                    updateConnectionStatus(true);
+                } catch (error) {
+                    updateConnectionStatus(false);
+                }
+            }, 2000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
+        });
+
+        // Add event listener for team count updates
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('individualTeamNames');
+            if (textarea) {
+                textarea.addEventListener('input', updateTeamCount);
+            }
+        });
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
