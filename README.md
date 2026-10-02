@@ -3,7 +3,7 @@
 ## Overview
 The KSEL Match Day Hub is a comprehensive web-based tournament management system designed for the Kern Scholastic Esports League weekly Fortnite competitions. It provides real-time coordination tools for tournament administrators and live schedule viewing for coaches and players.
 
-**Students and Coaches:** Access the Bus Dashboard at: [[Match Day Hub](https://erikmadams.github.io/ksel_match_day_hub/)]
+**Students and Coaches:** Access the Bus Dashboard at: [Match Day Hub](https://erikmadams.github.io/ksel_match_day_hub/)
 
 ## Features
 
@@ -20,9 +20,11 @@ The KSEL Match Day Hub is a comprehensive web-based tournament management system
 ### Visual Status System
 Buses display different colors based on their current state:
 - **Light Gray (Pending)**: Bus created but missing match key
-- **Gold (Ready)**: Bus has match key assigned  
+- **Gold (Ready)**: Bus has match key assigned
 - **Green (Active)**: Bus has been launched in Fortnite
 - **Red (Completed)**: 5 minutes have passed since launch and match is in progress
+
+Status color is driven entirely by the match key and launch checkbox — assigning teams to a bus does not change its color.
 
 ## Page Views
 
@@ -35,15 +37,22 @@ Full tournament management interface with all administrative controls.
 ## Admin Functions
 
 ### Bus Management
-- **Add Bus**: Create new battle buses with custom names and launch times
-- **Schedule Assignment**: Automatically sorts buses by time within Schedule A (3:30 release) or B (4:00 release)
-- **Individual Bus Controls**: Each bus has dedicated match key assignment, and removal options
+- **Add Bus**: Create new battle buses with custom names and launch times. New buses are added to the end of their schedule.
+- **Edit Bus**: Click the pencil icon on any bus to update its name or launch time without deleting and recreating it — handy for reusing last week's buses.
+- **Reorder Buses**: Click and drag a bus card to move it up or down within its schedule, or drag it into the other schedule's column to move it between Schedule A and Schedule B. Buses are no longer auto-sorted by time, so the order is entirely up to you.
+- **Individual Bus Controls**: Each bus has dedicated edit, match key assignment, team assignment, and removal options.
+
+### Team Assignment
+- Assign teams to a bus via manual entry (one team name per line) or CSV upload
+- Team list and count are shown on each bus card
+- Teams can be added, changed, or cleared at any time and have no effect on a bus's status color
 
 ### Match Key Management
 - Set unique match keys (Fortnite lobby codes) for each bus
 - Match keys can be added/updated at any time
 - Keys are hidden until set by administrator
 - Real-time display updates to all viewers
+- Match key is shown in a larger, bolder font on each bus card for easy reading at a glance
 
 ### Launch Controls
 - Manual launch checkboxes for each bus
@@ -53,7 +62,7 @@ Full tournament management interface with all administrative controls.
 
 ### Countdown Timer
 - Set target date/time for tournament start
-- "Set to Next Thursday 4:15 PM" quick option
+- "Set to Next Thursday at 4:15 PM" quick option
 - Real-time countdown display
 - Visible to all participants when enabled
 
@@ -62,8 +71,10 @@ Full tournament management interface with all administrative controls.
 ### Pre-Match Day Setup
 1. Set countdown timer for tournament start
 2. Access admin view using admin URL
-3. Create buses for both schedules with names and times
-5. Set match keys when ready to release lobby codes
+3. Reuse last week's buses by editing their names/times, or create new ones for both schedules
+4. Reorder or move buses between schedules as needed
+5. Assign teams to buses
+6. Set match keys when ready to release lobby codes
 
 ### During Matches
 1. Monitor bus status in admin view
@@ -110,12 +121,13 @@ README.md - This documentation
 - LocalStorage backup system
 - Cache control for reliable deployment
 - Tailwind CSS styling
-- Lucide icon integration
+- Lucide icon integration, with a fallback so the page keeps working (clock, schedule, Google Sheets sync) even if the icon library fails to load
 
 ## Support
 For technical support or feature requests, contact the KSEL leadership team.
 
 ## Version History
+- v5.0: Restored team assignment (manual entry and CSV upload) with status color depending only on the match key; doubled the match key display size; simplified the header subtitle; changed the countdown quick-set option to 4:15 PM and fixed a bug where the countdown's target date could get stuck on "Loading..."; added an Edit Bus button for changing a bus's name/time in place; added drag-and-drop to reorder buses within a schedule or move them between Schedule A and B; removed automatic time-based sorting so bus order is fully manual; fixed a bug that could freeze the entire page if the icon library failed to load
 - v4.0: Removed team assignment from buses and made adjustments to the timer
 - v3.0: Real-time Google Sheets integration with live data sync, enhanced visual bus status system, dedicated match key management, CSV team upload, and 5-second polling updates
 - v2.0: Google Sheets integration, enhanced team assignment, visual status system
