@@ -1248,8 +1248,11 @@
                     </div>
                 ` : '';
                 
+                const busTeams = bus.teams || [];
+
                 const adminButtonsHtml = isAdminView ? `
-                    <div class="flex items-center justify-end mb-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium opacity-75">${busTeams.length} teams assigned</span>
                         <div class="flex gap-1">
                             <button
                                 onclick="openMatchKeyModal(${bus.id}, '${column}')"
@@ -1257,6 +1260,13 @@
                                 title="Set match key"
                             >
                                 <i data-lucide="key" class="w-4 h-4"></i>
+                            </button>
+                            <button
+                                onclick="openBusTeamModal(${bus.id}, '${column}')"
+                                class="text-blue-500 hover:text-blue-700 p-1"
+                                title="Assign teams"
+                            >
+                                <i data-lucide="users" class="w-4 h-4"></i>
                             </button>
                             <button
                                 onclick="removeBus(${bus.id}, '${column}')"
@@ -1267,7 +1277,11 @@
                             </button>
                         </div>
                     </div>
-                ` : '';
+                ` : `
+                    <div class="text-center mb-2">
+                        <span class="text-xs font-medium opacity-75">${busTeams.length} teams assigned</span>
+                    </div>
+                `;
                 
                 busElement.innerHTML = `
                     <div class="mb-4">
@@ -1288,6 +1302,13 @@
                     </div>
                     ${launchCheckboxHtml}
                     ${adminButtonsHtml}
+                    <div class="space-y-1">
+                        ${busTeams.map(team => `
+                            <div class="bg-white bg-opacity-50 rounded px-2 py-1 text-sm font-medium">
+                                ${team}
+                            </div>
+                        `).join('')}
+                    </div>
                 `;
                 
                 scheduleContainer.appendChild(busElement);
@@ -1351,8 +1372,12 @@
 
         // Modal Event Handlers
         window.onclick = function(event) {
+            const busTeamModal = document.getElementById('busTeamModal');
             const matchKeyModal = document.getElementById('matchKeyModal');
 
+            if (event.target === busTeamModal) {
+                closeBusTeamModal();
+            }
             if (event.target === matchKeyModal) {
                 closeMatchKeyModal();
             }
@@ -1472,6 +1497,14 @@
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             stopPolling();
+        });
+
+        // Add event listener for team count updates
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('individualTeamNames');
+            if (textarea) {
+                textarea.addEventListener('input', updateTeamCount);
+            }
         });
 
         // Start the application
