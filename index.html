@@ -102,6 +102,7 @@
                             >
                         </div>
                         <button 
+                            id="nextThursdayBtn"
                             onclick="setNextThursday()"
                             class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                         >
@@ -408,6 +409,12 @@
         let lastSyncTimestamp = 0;
         let pollInterval = null;
 
+        // Time of day used by the "Set to Next Thursday" button. The button label
+        // is built from this too, so the two can't drift apart.
+        const NEXT_MATCH_HOUR = 16;
+        const NEXT_MATCH_MINUTE = 20;
+        const NEXT_MATCH_TIME = String(NEXT_MATCH_HOUR).padStart(2, '0') + ':' + String(NEXT_MATCH_MINUTE).padStart(2, '0');
+
         // Countdown Timer State
         let countdownState = {
             enabled: false,
@@ -476,6 +483,40 @@
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
+        }
+
+        // The countdown settings that are shared through Google Sheets and
+        // local storage. countdownState also holds intervalId, which is just
+        // this one browser's timer handle. It must never be saved or copied
+        // from another browser: a handle number that came from the admin's
+        // browser can match a different timer here, and startCountdown()
+        // would then cancel that unrelated timer by mistake.
+        function getShareableCountdownState() {
+            return {
+                enabled: countdownState.enabled,
+                targetDate: countdownState.targetDate
+            };
+        }
+
+        // Copies saved/shared countdown settings into countdownState in place,
+        // leaving this browser's own intervalId alone.
+        function mergeCountdownState(saved) {
+            if (!saved || typeof saved !== 'object') return;
+            if ('enabled' in saved) countdownState.enabled = !!saved.enabled;
+            if ('targetDate' in saved) countdownState.targetDate = saved.targetDate || null;
+        }
+
+        // Admin view: puts the current target date/time into the two input
+        // boxes so they always match what the countdown is really using
+        // (including after settings arrive from Google Sheets).
+        function syncCountdownInputs() {
+            if (!isAdminView || !countdownState.targetDate) return;
+            const target = new Date(countdownState.targetDate);
+            if (isNaN(target.getTime())) return;
+            const dateInput = document.getElementById('countdownDate');
+            const timeInput = document.getElementById('countdownTime');
+            if (dateInput) dateInput.value = getLocalDateString(target);
+            if (timeInput) timeInput.value = target.toTimeString().substring(0, 5);
         }
 
         // Keeps the "Next Match" target-date text (and the admin status panel's
@@ -567,7 +608,7 @@
             const tournamentData = {
                 busScheduleA: busScheduleA,
                 busScheduleB: busScheduleB,
-                countdownState: countdownState,
+                countdownState: getShareableCountdownState(),
                 timestamp: Date.now()
             };
 
@@ -679,8 +720,9 @@
                             // Update countdown state
                             if (result.data.countdownState) {
                                 const wasEnabled = countdownState.enabled;
-                                countdownState = { ...countdownState, ...result.data.countdownState };
+                                mergeCountdownState(result.data.countdownState);
                                 updateTargetDateDisplay();
+                                syncCountdownInputs();
 
                                 // Handle countdown state changes
                                 if (countdownState.enabled && !wasEnabled) {
@@ -807,7 +849,7 @@
             const scheduleData = {
                 busScheduleA: busScheduleA,
                 busScheduleB: busScheduleB,
-                countdownState: countdownState,
+                countdownState: getShareableCountdownState(),
                 timestamp: Date.now()
             };
             try {
@@ -857,7 +899,7 @@
                     busScheduleB = Array.isArray(parsed.busScheduleB) ? parsed.busScheduleB : [];
                     
                     if (parsed.countdownState) {
-                        countdownState = { ...countdownState, ...parsed.countdownState };
+                        mergeCountdownState(parsed.countdownState);
                     }
                     
                     console.log(`💾 Loaded from local storage - A: ${busScheduleA.length}, B: ${busScheduleB.length}`);
@@ -877,7 +919,11 @@
                 enabled: countdownState.enabled,
                 targetDate: countdownState.targetDate
             };
-            localStorage.setItem('kselCountdownState', JSON.stringify(stateToSave));
+            try {
+                localStorage.setItem('kselCountdownState', JSON.stringify(stateToSave));
+            } catch (e) {
+                console.error('Failed to save countdown state locally:', e);
+            }
         }
 
         function loadCountdownState() {
@@ -1209,6 +1255,7 @@
             }
             
             saveCountdownState();
+            saveBusSchedules(); // also sends the countdown settings to Google Sheets
             updateCountdownUI();
         }
 
@@ -1286,11 +1333,12 @@
             updateTargetDateDisplay();
 
             saveCountdownState();
-            
+            saveBusSchedules(); // also sends the countdown settings to Google Sheets
+
             if (countdownState.enabled) {
                 startCountdown();
             }
-            
+
             alert('Countdown target updated successfully!');
         }
 
@@ -1301,7 +1349,7 @@
             const daysUntilThursday = (4 - now.getDay() + 7) % 7;
             const nextThursday = new Date(now);
 
-            const isPastTargetTimeToday = now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() >= 15);
+            const isPastTargetTimeToday = now.getHours() > NEXT_MATCH_HOUR || (now.getHours() === NEXT_MATCH_HOUR && now.getMinutes() >= NEXT_MATCH_MINUTE);
 
             if (daysUntilThursday === 0 && isPastTargetTimeToday) {
                 nextThursday.setDate(now.getDate() + 7);
@@ -1309,10 +1357,10 @@
                 nextThursday.setDate(now.getDate() + (daysUntilThursday || 7));
             }
 
-            nextThursday.setHours(16, 15, 0, 0);
+            nextThursday.setHours(NEXT_MATCH_HOUR, NEXT_MATCH_MINUTE, 0, 0);
 
             const dateString = getLocalDateString(nextThursday);
-            const timeString = '16:15';
+            const timeString = NEXT_MATCH_TIME;
 
             document.getElementById('countdownDate').value = dateString;
             document.getElementById('countdownTime').value = timeString;
@@ -1625,14 +1673,13 @@
                 if (!countdownState.targetDate) {
                     setNextThursday();
                 } else {
-                    const targetDate = new Date(countdownState.targetDate);
-                    const dateString = getLocalDateString(targetDate);
-                    const timeString = targetDate.toTimeString().substring(0, 5);
-
-                    document.getElementById('countdownDate').value = dateString;
-                    document.getElementById('countdownTime').value = timeString;
-
+                    syncCountdownInputs();
                     updateTargetDateDisplay();
+                }
+
+                const thursdayBtn = document.getElementById('nextThursdayBtn');
+                if (thursdayBtn) {
+                    thursdayBtn.textContent = 'Set to Next Thursday at ' + formatTime12Hour(NEXT_MATCH_TIME);
                 }
 
                 // Add connection status indicator for admin
